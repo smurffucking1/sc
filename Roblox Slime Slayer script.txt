@@ -1,0 +1,1057 @@
+-- Load the Library for the Nigerian Fufu Supplier UI
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/stysscythe/script/main/LibTest.lua"))()
+
+-- Create a window for the Nigerian Fufu Supplier UI
+local Window = Library.Window('Nigerian Fufu Supplier')
+
+-- Create a tab in the window
+local Test1 = Window.CreateTab('Horny')
+
+-- Add a divider in the tab
+Test1.CreateDivider("Im cumming")
+
+-- Add a label in the tab
+Test1.CreateLabel("Squirting So Hard Hub")
+
+-- Add a button in the tab
+Test1.CreateButton("BOOBS", function()
+    print("Yay! i got clicked!")
+end)
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Shadow Slime" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Shadow Slime Farm", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+-- Create a tab in the window
+local Test1 = Window.CreateTab('Horny Sex 1')
+
+-- Add a divider in the tab
+Test1.CreateDivider("Farming Floor 1")
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Blue Slime" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Blue Slime Farm", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Mega Slime" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Mega Slime", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Red Slime" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Red Slime", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Ultra Red Slime" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Ultra Red Slime", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+Test1.CreateDivider("Boobs Room Floor 1")
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Slime Queen" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Slime Queen", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Slime Guardsman" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Slime Guardsman", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+-- Create a tab in the window
+local Test1 = Window.CreateTab('Horny Sex 2')
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "King Cactimus" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("King Cactimus", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Cacti Defender" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Cacti", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+-- Create a tab in the window
+local Test1 = Window.CreateTab('Horny Sex 3')
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Lord Toxarus" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Lord Toxarus", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Slime Sentry" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("Sentry", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+-- Create a tab in the window
+local Test1 = Window.CreateTab('Horny Sex 4')
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "King Kraken" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("big fish", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+
+-- Define the tweening function
+local function tweenToMob()
+    -- Get the local player and their character
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+    local humanoid = character:WaitForChild("Humanoid")
+
+    -- The name of the mob you want to teleport to
+    local mobName = "Coral Garrison" -- Change this to the actual mob name
+
+    -- Find the mob in the workspace
+    local mob = game.Workspace.Enemies:FindFirstChild(mobName)
+
+    if mob then
+        local mobHumanoidRootPart = mob:FindFirstChild("HumanoidRootPart")
+
+        if mobHumanoidRootPart then
+            -- Calculate the destination position below the mob's HumanoidRootPart
+            local destinationPosition = mobHumanoidRootPart.Position - Vector3.new(0, 3, 0) -- Adjust the Y offset as needed
+
+            -- Define the tween parameters with a faster duration
+            local tweenInfo = TweenInfo.new(
+                0.1, -- Duration (seconds), adjust this for a faster tween
+                Enum.EasingStyle.Linear, -- Easing style
+                Enum.EasingDirection.Out, -- Easing direction
+                0, -- Number of times to repeat (0 for no repeat)
+                false, -- Whether to reverse the animation on repeat
+                0 -- Delay (seconds)
+            )
+
+            -- Create the tween
+            local tween = game:GetService("TweenService"):Create(humanoidRootPart, tweenInfo, {CFrame = CFrame.new(destinationPosition)})
+
+            -- Define a function to be executed when the tween completes
+            local function onTweenComplete()
+                -- Restore gravity when the tween completes
+                humanoidRootPart.Anchored = true
+                humanoidRootPart.Anchored = false
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyTorque = Vector3.new(0, 0, 0)
+                humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                humanoid.Gravity = 0 -- Set gravity to zero
+            end
+
+            -- Connect the completion function to the tween's Completed event
+            tween.Completed:Connect(onTweenComplete)
+
+            -- Play the tween
+            tween:Play()
+        else
+            warn(mobName .. " does not have a HumanoidRootPart.")
+        end
+    else
+        warn(mobName .. " not found in the workspace.")
+    end
+end
+
+-- Add a toggle in the tab to enable/disable tweening
+local isTweening = false
+Test1.CreateToggle("snail", function(state)
+    if state then
+        -- When toggled on, execute the tweening function
+        print("Tweening enabled")
+        isTweening = true
+        while isTweening do
+            tweenToMob()
+            wait(0) -- Adjust the interval as needed
+        end
+    else
+        print("Tweening disabled")
+        isTweening = false
+    end
+end)
+
+-- Display the Nigerian Fufu Supplier UI window
+Window:Initiate()
