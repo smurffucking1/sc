@@ -5571,61 +5571,6 @@ do -- ui stuffs
         })
     end
 
-    -- Define other sections within Misc
-    local Misc = Window:Tab(Library.Images.Folder)
-
-    local MovementSection = Misc:Section({Name = "Misc", ScaleSize = 1, Size = 1}) do
-        MovementSection:Toggle({
-            Name = "Remove Killparts", 
-            Flag = "R_KPARTS", 
-            State = false, 
-            Callback = function(val)
-                local killparts = workspace:FindFirstChild("KillParts")
-                if killparts then 
-                    for _, v in killparts:GetChildren() do 
-                        if v:IsA("BasePart") then 
-                            v.CanTouch = not val 
-                            v.CanQuery = not val
-                        end 
-                    end
-                end
-            end
-        })
-        
-        MovementSection:Toggle({
-            Name = "Mute Boss Music", 
-            Flag = "M_BOSSMUSIC", 
-            State = false, 
-            Callback = function(val)
-                local arenas = workspace:FindFirstChild("BossArenas")
-                if arenas then 
-                    for _, v in arenas:GetChildren() do 
-                        local sound = v:FindFirstChild("Music") or v:FindFirstChildOfClass("Sound")
-                        if sound then 
-                            sound.Volume = val and 0 or 0.5
-                        end
-                    end
-                end
-
-                for _, v in workspace:GetChildren() do 
-                    local sound = v:IsA("Sound") and v or nil
-                    if sound then 
-                        sound.Volume = val and 0 or 0.5
-                    end
-                end
-            end
-        })
-    end
-
-    local VisualsSection = Misc:Section({Name = "Visuals", Side = "Right", ScaleSize = 1, Size = 1}) do
-    end
-
-    -- Settings Tab
-    local Settings = Window:Tab(Library.Images.Cog)
-    Library:SettingsTab(Settings, Window)
-    Settings:Show()
-end
-
 -- Kill Aura Script Integration
 -- Prevents double execution if already running
 if getgenv().goofy then 
@@ -5715,3 +5660,59 @@ goofy.runner = runservice.Heartbeat:Connect(function(init)
 end)
 
 warn("[JAYLUA]: injected")
+
+    -- Define other sections within Misc
+    local Misc = Window:Tab(Library.Images.Folder)
+
+    local MovementSection = Misc:Section({Name = "Misc", ScaleSize = 1, Size = 1}) do
+        MovementSection:Toggle({
+            Name = "Remove Killparts", 
+            Flag = "R_KPARTS", 
+            State = false, 
+            Callback = function(val)
+                local killparts = workspace:FindFirstChild("KillParts")
+                if killparts then 
+                    for _, v in killparts:GetChildren() do 
+                        if v:IsA("BasePart") then 
+                            v.CanTouch = not val 
+                            v.CanQuery = not val
+                        end 
+                    end
+                end
+            end
+        })
+        
+        MovementSection:Toggle({
+            Name = "Mute Boss Music", 
+            Flag = "M_BOSSMUSIC", 
+            State = false, 
+            Callback = function(val)
+                local arenas = workspace:FindFirstChild("BossArenas")
+                if arenas then 
+                    for _, v in arenas:GetChildren() do 
+                        local sound = v:FindFirstChild("Music") or v:FindFirstChildOfClass("Sound")
+                        if sound then 
+                            sound.Volume = val and 0 or 0.5
+                        end
+                    end
+                end
+
+                for _, v in workspace:GetChildren() do 
+                    local sound = v:IsA("Sound") and v or nil
+                    if sound then 
+                        sound.Volume = val and 0 or 0.5
+                    end
+                end
+            end
+        })
+    end
+
+    local VisualsSection = Misc:Section({Name = "Visuals", Side = "Right", ScaleSize = 1, Size = 1}) do
+    end
+
+    -- Settings Tab
+    local Settings = Window:Tab(Library.Images.Cog)
+    Library:SettingsTab(Settings, Window)
+    Settings:Show()
+end
+
