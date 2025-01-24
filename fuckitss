@@ -1,3 +1,7 @@
+-- Load the notification library
+local AkaliNotif = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kinlei/Dynissimo/main/Scripts/AkaliNotif.lua"))()
+local Notify = AkaliNotif.Notify
+
 -- // Library Tables
 local library = {}
 local utility = {}
@@ -832,34 +836,271 @@ do
 	end
 end
 
--- // Main
-local window = library:Window({name = "<font color=\"#AA55EB\">elixer.sol</font> | Jul 7 2021"})
---
-local aimbot = window:Page({Name = "aimbot"})
-local antiaim = window:Page({Name = "antiaim"})
-local visuals = window:Page({Name = "visuals"})
-local misc = window:Page({Name = "misc"})
-local config = window:Page({Name = "config"})
-local skins = window:Page({Name = "skins"})
---
-local aimbot_section = aimbot:Section({Name = "players", size = 300})
-local aimbot_section2 = aimbot:Section({Name = "colored models", Side = "Right"})
---
-local label = aimbot_section:Label({Name = "label hello random"})
-local label2 = aimbot_section:Label({Name = "with none", Offset = 16})
-local toggle = aimbot_section:Toggle({Name = "random toggle", Default = true, Callback = function(val) warn(val) end})
-local slider = aimbot_section:Slider({Default = 10, Minimum = -10, Maximum = 30, Decimals = 10, Suffix = "%", Callback = function(val) warn(val) end})
-local button = aimbot_section:Button({Name = "random button", Callback = function() warn("clicked") end})
-local slider = aimbot_section:Slider({Name = "random slider", Callback = function(val) warn(val) end})
-local slider = aimbot_section:Slider({Name = "random slider", Default = 10, Minimum = -10, Maximum = 30, Decimals = 10, Suffix = "%", Callback = function(val) warn(val) end})
-local label = aimbot_section:Label({Name = "label hello random"})
-local label2 = aimbot_section:Label({Name = "with none", Offset = 16})
-local toggle = aimbot_section:Toggle({Name = "random toggle", Default = true, Callback = function(val) warn(val) end})
-local slider = aimbot_section:Slider({Default = 10, Minimum = -10, Maximum = 30, Decimals = 10, Suffix = "%", Callback = function(val) warn(val) end})
-local button = aimbot_section:Button({Name = "random button", Callback = function() warn("clicked") end})
-local slider = aimbot_section:Slider({Name = "random slider", Callback = function(val) warn(val) end})
-local slider = aimbot_section:Slider({Name = "random slider", Default = 10, Minimum = -10, Maximum = 30, Decimals = 10, Suffix = "%", Callback = function(val) warn(val) end})
---
-aimbot:Turn(true)
+-- Create a new window
+local window = library:Window({
+    name = "<font color=\"#AA55EB\">Boatong SCRIPT</font>"
+})
 
+-- Add pages
+local boatFunctions = window:Page({Name = "Boat Functions"})
+local chestFarmPage = window:Page({Name = "Chest Farming"})
+
+-- Add sections to Boat Functions page
+local flamethrowerSection = boatFunctions:Section({Name = "Flamethrower Toggles", size = 300})
+local repairSection = boatFunctions:Section({Name = "Repair Toggles", Side = "Right"})
+
+-- Add section to Chest Farming page
+local chestFarmSection = chestFarmPage:Section({Name = "Chest Farming Toggle", size = 300})
+
+-- Local player reference
+local player = game.Players.LocalPlayer
+
+-- ####################### Chest Farming #######################
+local isFarming = false
+
+local function findChestParts()
+    local chest = workspace:FindFirstChild("Chests")
+    if chest then
+        local chestInstance = chest:FindFirstChild("Chest")
+        if chestInstance then
+            local chestBottom = chestInstance:FindFirstChild("ChestBottom")
+            if chestBottom then
+                local metalOutline = chestBottom:FindFirstChild("MetalOutline")
+                if metalOutline then
+                    local trigger = metalOutline:FindFirstChild("Trigger")
+                    if trigger then
+                        local remoteEvent = trigger:FindFirstChild("TriggerRemoteEvent")
+                        local woodPart = chestInstance:FindFirstChild("ChestTop") and chestInstance.ChestTop:FindFirstChild("Wood")
+                        return remoteEvent, woodPart
+                    end
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
+local function teleportToWood(woodPart)
+    if woodPart then
+        player.Character:SetPrimaryPartCFrame(woodPart.CFrame)
+    else
+        warn("Wood part not found!")
+    end
+end
+
+local function triggerRemoteEvent(remote)
+    if remote then
+        remote:FireServer()
+    else
+        warn("TriggerRemoteEvent not found!")
+    end
+end
+
+local function startChestFarming()
+    while isFarming do
+        local remote, woodPart = findChestParts()
+        if remote and woodPart then
+            triggerRemoteEvent(remote)
+            teleportToWood(woodPart)
+        else
+            Notify({
+                Description = "Chest parts not found! Searching for the next chest.",
+                Title = "Chest Not Found",
+                Duration = 3
+            })
+        end
+        wait(1)
+    end
+end
+
+chestFarmSection:Toggle({
+    Text = "Start/Stop Chest Farming",
+    Callback = function(state)
+        isFarming = state
+        if isFarming then
+            Notify({
+                Description = "Chest farming started.",
+                Title = "Started",
+                Duration = 3
+            })
+            startChestFarming()
+        else
+            Notify({
+                Description = "Chest farming stopped.",
+                Title = "Stopped",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- ####################### Flamethrower Toggles #######################
+local isFiringPersonal = false
+local isFiringTeam = false
+
+local function findLocalPlayersBoat()
+    local boatsFolder = workspace:WaitForChild("Boats")
+    for _, boat in ipairs(boatsFolder:GetChildren()) do
+        local boatData = boat:FindFirstChild("BoatData")
+        if boatData and boatData:FindFirstChild("Owner") and boatData.Owner.Value == player then
+            return boat
+        end
+    end
+    return nil
+end
+
+local function activateAllFlamethrowers(boat)
+    if boat then
+        for _, flamethrower in ipairs(boat:GetDescendants()) do
+            if flamethrower:IsA("RemoteEvent") and flamethrower.Name == "FlamethrowerRemoteEvent" then
+                flamethrower:FireServer("Activate")
+            end
+        end
+    end
+end
+
+local function activateTeamFlamethrowers()
+    local boatsFolder = workspace:WaitForChild("Boats")
+    for _, teammate in ipairs(game.Players:GetPlayers()) do
+        if teammate.Team == player.Team then
+            for _, boat in ipairs(boatsFolder:GetChildren()) do
+                local boatData = boat:FindFirstChild("BoatData")
+                if boatData and boatData:FindFirstChild("Owner") and boatData.Owner.Value == teammate then
+                    activateAllFlamethrowers(boat)
+                end
+            end
+        end
+    end
+end
+
+flamethrowerSection:Toggle({
+    Text = "Toggle Personal Flamethrowers",
+    Callback = function(state)
+        isFiringPersonal = state
+        if isFiringPersonal then
+            Notify({
+                Description = "Personal Flamethrowers Activated.",
+                Title = "Activated",
+                Duration = 3
+            })
+            while isFiringPersonal do
+                local boat = findLocalPlayersBoat()
+                if boat then activateAllFlamethrowers(boat) end
+                wait(0.1)
+            end
+        else
+            Notify({
+                Description = "Personal Flamethrowers Deactivated.",
+                Title = "Deactivated",
+                Duration = 3
+            })
+        end
+    end
+})
+
+flamethrowerSection:Toggle({
+    Text = "Toggle Team Flamethrowers",
+    Callback = function(state)
+        isFiringTeam = state
+        if isFiringTeam then
+            Notify({
+                Description = "Team Flamethrowers Activated.",
+                Title = "Activated",
+                Duration = 3
+            })
+            while isFiringTeam do
+                activateTeamFlamethrowers()
+                wait(0.1)
+            end
+        else
+            Notify({
+                Description = "Team Flamethrowers Deactivated.",
+                Title = "Deactivated",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- ####################### Repair Toggles #######################
+local isRepairingPersonal = false
+local isRepairingTeam = false
+
+local function repairBoat(boat)
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local args = { "RepairBoat", boat }
+    ReplicatedStorage:WaitForChild("RemoteFunctions"):WaitForChild("BoatApiRemoteFunction"):InvokeServer(unpack(args))
+end
+
+local function repairAllBoats()
+    local boatsFolder = workspace:WaitForChild("Boats")
+    for _, boat in ipairs(boatsFolder:GetChildren()) do
+        local boatData = boat:FindFirstChild("BoatData")
+        if boatData and boatData:FindFirstChild("Owner") and boatData.Owner.Value == player then
+            repairBoat(boat)
+        end
+    end
+end
+
+local function repairTeamBoats()
+    local boatsFolder = workspace:WaitForChild("Boats")
+    for _, teammate in ipairs(game.Players:GetPlayers()) do
+        if teammate.Team == player.Team then
+            for _, boat in ipairs(boatsFolder:GetChildren()) do
+                local boatData = boat:FindFirstChild("BoatData")
+                if boatData and boatData:FindFirstChild("Owner") and boatData.Owner.Value == teammate then
+                    repairBoat(boat)
+                end
+            end
+        end
+    end
+end
+
+repairSection:Toggle({
+    Text = "Toggle Personal Repairs",
+    Callback = function(state)
+        isRepairingPersonal = state
+        if isRepairingPersonal then
+            Notify({
+                Description = "Auto Repair for Personal Boat Enabled.",
+                Title = "Activated",
+                Duration = 3
+            })
+            while isRepairingPersonal do
+                repairAllBoats()
+                wait(0.75)
+            end
+        else
+            Notify({
+                Description = "Auto Repair for Personal Boat Disabled.",
+                Title = "Deactivated",
+                Duration = 3
+            })
+        end
+    end
+})
+
+repairSection:Toggle({
+    Text = "Toggle Team Repairs",
+    Callback = function(state)
+        isRepairingTeam = state
+        if isRepairingTeam then
+            Notify({
+                Description = "Auto Repair for Team Boats Enabled.",
+                Title = "Activated",
+                Duration = 3
+            })
+            while isRepairingTeam do
+                repairTeamBoats()
+                wait(0.75)
+            end
+        else
+            Notify({
+                Description = "Auto Repair for Team Boats Disabled.",
+                Title = "Deactivated",
+                Duration = 3
+            })
+        end
+    end
+})
 return library, utility, obelus
