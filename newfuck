@@ -856,8 +856,10 @@ local chestFarmSection = chestFarmPage:Section({Name = "Chest Farming Toggle", s
 local player = game.Players.LocalPlayer
 
 -- ####################### Chest Farming #######################
+-- Find chest parts
 local isChestFarming = false  -- flag for farming
 local isChestAura = false     -- flag for aura
+local isMultiChestTeleport = false -- flag for multi-chest teleport
 local player = game.Players.LocalPlayer
 
 -- Find chest parts
@@ -944,6 +946,34 @@ local function startChestAura()
     end)
 end
 
+-- Teleport to Multiple Chests
+local function teleportToMultipleChests()
+    while isMultiChestTeleport do
+        local chests = workspace:WaitForChild("Chests"):GetChildren()
+        for _, chest in ipairs(chests) do
+            local chestBottom = chest:FindFirstChild("ChestBottom")
+            if chestBottom then
+                local metalOutline = chestBottom:FindFirstChild("MetalOutline")
+                if metalOutline then
+                    local trigger = metalOutline:FindFirstChild("Trigger")
+                    if trigger then
+                        local triggerEvent = trigger:FindFirstChild("TriggerRemoteEvent")
+                        if triggerEvent then
+                            -- Move the player to the chest
+                            game.Players.LocalPlayer.Character:MoveTo(metalOutline.Position)
+                            wait(0.5) -- Add a slight delay to ensure the event fires correctly
+                            -- Fire the chest's trigger event
+                            triggerEvent:FireServer()
+                        end
+                    end
+                end
+            end
+        end
+        wait(0.5) -- Control loop speed to prevent spamming
+    end
+end
+
+
 -- Toggle Chest Farming
 chestFarmSection:Toggle({
     Text = "Start/Stop Chest Farming",
@@ -988,6 +1018,27 @@ chestFarmSection:Toggle({
     end
 })
 
+-- Toggle Multi Chest Teleport
+chestFarmSection:Toggle({
+    Text = "Start/Stop Multi Chest Teleport",
+    Callback = function(state)
+        isMultiChestTeleport = state
+        if isMultiChestTeleport then
+            Notify({
+                Description = "Multi chest teleport started.",
+                Title = "Started",
+                Duration = 3
+            })
+            teleportToMultipleChests()  -- Start teleporting to multiple chests
+        else
+            Notify({
+                Description = "Multi chest teleport stopped.",
+                Title = "Stopped",
+                Duration = 3
+            })
+        end
+    end
+})
 -- ####################### Flamethrower Toggles #######################
 local isFiringPersonal = false
 local isFiringTeam = false
