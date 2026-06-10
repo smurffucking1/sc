@@ -3,6 +3,7 @@
     A clean, standalone Roblox UI library inspired by Orca's visual design.
     No external dependencies. Pure LocalScript-compatible Lua.
 
+
     Usage:
         local OrcaUI = loadstring(...)() -- or require(path)
         local window = OrcaUI:CreateWindow({ Title = "My Menu", Theme = "Dark" })
@@ -12,20 +13,26 @@
         tab:AddSlider("Speed", 0, 100, 16, function(val) print(val) end)
 ]]
 
+
 local OrcaUI = {}
 OrcaUI.__index = OrcaUI
 
+
 -- ─── Services ────────────────────────────────────────────────────────────────
 
-local Players         = game:GetService("Players")
-local TweenService    = game:GetService("TweenService")
+
+local Players          = game:GetService("Players")
+local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService      = game:GetService("RunService")
+local RunService       = game:GetService("RunService")
+
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
+
 -- ─── Utility ─────────────────────────────────────────────────────────────────
+
 
 local function hex(h)
     h = h:gsub("#", "")
@@ -36,11 +43,13 @@ local function hex(h)
     )
 end
 
+
 local function tween(obj, props, duration, style, direction)
     style     = style     or Enum.EasingStyle.Quart
     direction = direction or Enum.EasingDirection.Out
     TweenService:Create(obj, TweenInfo.new(duration or 0.2, style, direction), props):Play()
 end
+
 
 local function spring(obj, props, freq, damping)
     -- Simulates a spring via TweenService with custom parameters
@@ -50,12 +59,14 @@ local function spring(obj, props, freq, damping)
     TweenService:Create(obj, TweenInfo.new(dur, Enum.EasingStyle.Back, Enum.EasingDirection.Out), props):Play()
 end
 
+
 local function makeCorner(parent, radius)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, radius or 8)
     c.Parent = parent
     return c
 end
+
 
 local function makeStroke(parent, color, thickness, transparency)
     local s = Instance.new("UIStroke")
@@ -67,6 +78,7 @@ local function makeStroke(parent, color, thickness, transparency)
     return s
 end
 
+
 local function makePadding(parent, top, right, bottom, left)
     local p = Instance.new("UIPadding")
     p.PaddingTop    = UDim.new(0, top    or 0)
@@ -76,6 +88,7 @@ local function makePadding(parent, top, right, bottom, left)
     p.Parent = parent
     return p
 end
+
 
 local function makeListLayout(parent, direction, padding, halign, valign)
     local l = Instance.new("UIListLayout")
@@ -88,6 +101,7 @@ local function makeListLayout(parent, direction, padding, halign, valign)
     return l
 end
 
+
 local function newFrame(props)
     local f = Instance.new("Frame")
     for k, v in pairs(props or {}) do
@@ -95,6 +109,7 @@ local function newFrame(props)
     end
     return f
 end
+
 
 local function newLabel(props)
     local l = Instance.new("TextLabel")
@@ -108,9 +123,12 @@ local function newLabel(props)
     return l
 end
 
+
 -- ─── Themes ──────────────────────────────────────────────────────────────────
 
+
 local Themes = {}
+
 
 Themes.Dark = {
     name                   = "Dark",
@@ -135,6 +153,7 @@ Themes.Dark = {
     tabRounding            = 6,
 }
 
+
 Themes.Light = {
     name                   = "Light",
     background             = hex("#f0f0f0"),
@@ -157,6 +176,7 @@ Themes.Light = {
     elementRounding        = 8,
     tabRounding            = 6,
 }
+
 
 Themes.Sorbet = {
     name                   = "Sorbet",
@@ -181,6 +201,7 @@ Themes.Sorbet = {
     tabRounding            = 6,
 }
 
+
 Themes.Obsidian = {
     name                   = "Obsidian",
     background             = hex("#0d0d0d"),
@@ -204,10 +225,13 @@ Themes.Obsidian = {
     tabRounding            = 6,
 }
 
--- ─── Tab Object ───────────────────────────────────────────────────────────────
+
+-- ─── Tab Object ─────────────────────────────────────────────────────────────
+
 
 local Tab = {}
 Tab.__index = Tab
+
 
 function Tab.new(name, container, theme)
     local self = setmetatable({}, Tab)
@@ -218,12 +242,15 @@ function Tab.new(name, container, theme)
     return self
 end
 
+
 function Tab:_nextOrder()
     self._count = self._count + 1
     return self._count
 end
 
+
 -- ── Section Label ──
+
 
 function Tab:AddSection(title)
     local t = self.Theme
@@ -246,7 +273,9 @@ function Tab:AddSection(title)
     return frame
 end
 
+
 -- ── Label ──
+
 
 function Tab:AddLabel(text)
     local t = self.Theme
@@ -261,6 +290,7 @@ function Tab:AddLabel(text)
     })
     makePadding(lbl, 0, 0, 0, 8)
 
+
     local labelObj = {}
     function labelObj:SetText(newText)
         lbl.Text = newText
@@ -268,10 +298,13 @@ function Tab:AddLabel(text)
     return labelObj
 end
 
+
 -- ── Button ──
+
 
 function Tab:AddButton(text, callback)
     local t = self.Theme
+
 
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 36)
@@ -285,6 +318,7 @@ function Tab:AddButton(text, callback)
     btn.Parent = self.Container
     makeCorner(btn, t.elementRounding)
     makeStroke(btn, t.border, 1, t.borderTransparency)
+
 
     btn.MouseEnter:Connect(function()
         tween(btn, { BackgroundColor3 = t.buttonBackground:Lerp(t.foreground, 0.07) }, 0.15)
@@ -302,17 +336,21 @@ function Tab:AddButton(text, callback)
         if callback then callback() end
     end)
 
+
     local btnObj = {}
     function btnObj:SetText(newText) btn.Text = newText end
     function btnObj:SetCallback(fn) callback = fn end
     return btnObj
 end
 
+
 -- ── Toggle ──
+
 
 function Tab:AddToggle(text, default, callback)
     local t = self.Theme
     local state = default or false
+
 
     local row = newFrame({
         Size = UDim2.new(1, 0, 0, 36),
@@ -323,6 +361,7 @@ function Tab:AddToggle(text, default, callback)
     makeCorner(row, t.elementRounding)
     makeStroke(row, t.border, 1, t.borderTransparency)
 
+
     local lbl = newLabel({
         Text = text,
         Size = UDim2.new(1, -60, 1, 0),
@@ -330,6 +369,7 @@ function Tab:AddToggle(text, default, callback)
         TextColor3 = t.foreground,
         Parent = row,
     })
+
 
     -- Track background
     local track = newFrame({
@@ -339,6 +379,7 @@ function Tab:AddToggle(text, default, callback)
         Parent = row,
     })
     makeCorner(track, 9)
+
 
     -- Knob
     local knob = newFrame({
@@ -350,6 +391,7 @@ function Tab:AddToggle(text, default, callback)
     })
     makeCorner(knob, 6)
 
+
     local function setState(val)
         state = val
         tween(track, { BackgroundColor3 = state and t.toggleOn or t.toggleOff }, 0.18)
@@ -358,6 +400,7 @@ function Tab:AddToggle(text, default, callback)
             or  UDim2.new(0, 3,  0.5, -6) }, 0.18)
         if callback then callback(state) end
     end
+
 
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 1, 0)
@@ -369,6 +412,7 @@ function Tab:AddToggle(text, default, callback)
         setState(not state)
     end)
 
+
     local obj = {}
     function obj:SetValue(val) setState(val) end
     function obj:GetValue() return state end
@@ -376,7 +420,9 @@ function Tab:AddToggle(text, default, callback)
     return obj
 end
 
+
 -- ── Slider ──
+
 
 function Tab:AddSlider(text, min, max, default, callback)
     local t = self.Theme
@@ -384,6 +430,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     max     = max     or 100
     default = math.clamp(default or min, min, max)
     local value = default
+
 
     local container = newFrame({
         Size = UDim2.new(1, 0, 0, 52),
@@ -393,6 +440,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     })
     makeCorner(container, t.elementRounding)
     makeStroke(container, t.border, 1, t.borderTransparency)
+
 
     -- Top row: label + value display
     local lbl = newLabel({
@@ -411,6 +459,7 @@ function Tab:AddSlider(text, min, max, default, callback)
         Parent = container,
     })
 
+
     -- Track background
     local trackBg = newFrame({
         Size = UDim2.new(1, -24, 0, 4),
@@ -420,6 +469,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     })
     makeCorner(trackBg, 2)
 
+
     -- Track fill
     local fill = newFrame({
         Size = UDim2.new((value - min) / (max - min), 0, 1, 0),
@@ -427,6 +477,7 @@ function Tab:AddSlider(text, min, max, default, callback)
         Parent = trackBg,
     })
     makeCorner(fill, 2)
+
 
     -- Invisible input overlay
     local inputFrame = Instance.new("TextButton")
@@ -437,6 +488,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     inputFrame.ZIndex = 5
     inputFrame.Parent = container
 
+
     local dragging = false
     local function updateFromX(absX, absSize)
         local pct = math.clamp((absX - absSize.X) / absSize.Width, 0, 1)
@@ -445,6 +497,7 @@ function Tab:AddSlider(text, min, max, default, callback)
         valLbl.Text = tostring(value)
         if callback then callback(value) end
     end
+
 
     inputFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -467,6 +520,7 @@ function Tab:AddSlider(text, min, max, default, callback)
         end
     end)
 
+
     local obj = {}
     function obj:SetValue(val)
         value = math.clamp(math.round(val), min, max)
@@ -479,12 +533,15 @@ function Tab:AddSlider(text, min, max, default, callback)
     return obj
 end
 
+
 -- ── Dropdown ──
+
 
 function Tab:AddDropdown(text, options, default, callback)
     local t = self.Theme
     local selected = default or (options and options[1]) or ""
     local open = false
+
 
     local wrapper = newFrame({
         Size = UDim2.new(1, 0, 0, 36),
@@ -493,6 +550,7 @@ function Tab:AddDropdown(text, options, default, callback)
         ClipsDescendants = false,
         Parent = self.Container,
     })
+
 
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 36)
@@ -503,6 +561,7 @@ function Tab:AddDropdown(text, options, default, callback)
     btn.Parent = wrapper
     makeCorner(btn, t.elementRounding)
     makeStroke(btn, t.border, 1, t.borderTransparency)
+
 
     local lbl = newLabel({
         Text = text,
@@ -532,6 +591,7 @@ function Tab:AddDropdown(text, options, default, callback)
         Parent = btn,
     })
 
+
     -- Dropdown list frame (hidden by default)
     local listFrame = newFrame({
         Size = UDim2.new(1, 0, 0, 0),
@@ -545,7 +605,9 @@ function Tab:AddDropdown(text, options, default, callback)
     makeCorner(listFrame, t.elementRounding)
     makeStroke(listFrame, t.border, 1, t.borderTransparency)
 
+
     local listLayout = makeListLayout(listFrame, Enum.FillDirection.Vertical, 0)
+
 
     local function buildList()
         for _, child in ipairs(listFrame:GetChildren()) do
@@ -582,7 +644,9 @@ function Tab:AddDropdown(text, options, default, callback)
         end
     end
 
+
     buildList()
+
 
     btn.Activated:Connect(function()
         open = not open
@@ -593,6 +657,7 @@ function Tab:AddDropdown(text, options, default, callback)
         -- Grow wrapper height
         tween(wrapper, { Size = UDim2.new(1, 0, 0, open and 36 + targetH + 4 or 36) }, 0.18)
     end)
+
 
     local obj = {}
     function obj:SetOptions(newOptions)
@@ -608,10 +673,13 @@ function Tab:AddDropdown(text, options, default, callback)
     return obj
 end
 
+
 -- ── TextBox ──
+
 
 function Tab:AddTextbox(text, placeholder, default, callback)
     local t = self.Theme
+
 
     local container = newFrame({
         Size = UDim2.new(1, 0, 0, 52),
@@ -622,6 +690,7 @@ function Tab:AddTextbox(text, placeholder, default, callback)
     makeCorner(container, t.elementRounding)
     makeStroke(container, t.border, 1, t.borderTransparency)
 
+
     local lbl = newLabel({
         Text = text,
         Size = UDim2.new(1, -12, 0, 18),
@@ -630,6 +699,7 @@ function Tab:AddTextbox(text, placeholder, default, callback)
         TextSize = 12,
         Parent = container,
     })
+
 
     local box = Instance.new("TextBox")
     box.Size = UDim2.new(1, -24, 0, 22)
@@ -647,9 +717,11 @@ function Tab:AddTextbox(text, placeholder, default, callback)
     makeCorner(box, 4)
     makePadding(box, 0, 0, 0, 6)
 
+
     box.FocusLost:Connect(function(enter)
         if callback then callback(box.Text, enter) end
     end)
+
 
     local obj = {}
     function obj:GetValue() return box.Text end
@@ -658,12 +730,15 @@ function Tab:AddTextbox(text, placeholder, default, callback)
     return obj
 end
 
+
 -- ── Keybind ──
+
 
 function Tab:AddKeybind(text, default, callback)
     local t = self.Theme
     local key = default or Enum.KeyCode.Unknown
     local binding = false
+
 
     local row = newFrame({
         Size = UDim2.new(1, 0, 0, 36),
@@ -674,6 +749,7 @@ function Tab:AddKeybind(text, default, callback)
     makeCorner(row, t.elementRounding)
     makeStroke(row, t.border, 1, t.borderTransparency)
 
+
     local lbl = newLabel({
         Text = text,
         Size = UDim2.new(1, -90, 1, 0),
@@ -681,6 +757,7 @@ function Tab:AddKeybind(text, default, callback)
         TextColor3 = t.foreground,
         Parent = row,
     })
+
 
     local keyBtn = Instance.new("TextButton")
     keyBtn.Size = UDim2.new(0, 72, 0, 22)
@@ -694,11 +771,13 @@ function Tab:AddKeybind(text, default, callback)
     keyBtn.Parent = row
     makeCorner(keyBtn, 4)
 
+
     keyBtn.Activated:Connect(function()
         binding = true
         keyBtn.Text = "..."
         keyBtn.TextColor3 = t.accent
     end)
+
 
     UserInputService.InputBegan:Connect(function(input, gpe)
         if binding and input.UserInputType == Enum.UserInputType.Keyboard then
@@ -710,6 +789,7 @@ function Tab:AddKeybind(text, default, callback)
         end
     end)
 
+
     local obj = {}
     function obj:GetValue() return key end
     function obj:SetValue(k) key = k; keyBtn.Text = k.Name end
@@ -717,13 +797,17 @@ function Tab:AddKeybind(text, default, callback)
     return obj
 end
 
+
 -- ─── Window Object ────────────────────────────────────────────────────────────
+
 
 local Window = {}
 Window.__index = Window
 
+
 function Window.new(options)
     local self = setmetatable({}, Window)
+
 
     options      = options or {}
     self.Title   = options.Title   or "OrcaUI"
@@ -733,12 +817,15 @@ function Window.new(options)
     self._tabs   = {}
     self._active = nil
 
+
     self:_build()
     return self
 end
 
+
 function Window:_build()
     local t = self.Theme
+
 
     -- ScreenGui
     local sg = Instance.new("ScreenGui")
@@ -756,6 +843,7 @@ function Window:_build()
     end
     self._gui = sg
 
+
     -- Shadow frame (drop-shadow illusion)
     local shadow = newFrame({
         AnchorPoint = Vector2.new(0.5, 0.5),
@@ -769,6 +857,7 @@ function Window:_build()
     })
     makeCorner(shadow, t.windowRounding + 4)
     self._shadow = shadow
+
 
     -- Main window frame
     local win = newFrame({
@@ -784,6 +873,7 @@ function Window:_build()
     makeStroke(win, t.border, 1, t.borderTransparency)
     self._win = win
 
+
     -- Title bar
     local titleBar = newFrame({
         Size = UDim2.new(1, 0, 0, 44),
@@ -791,6 +881,7 @@ function Window:_build()
         ZIndex = 2,
         Parent = win,
     })
+
 
     local titleLbl = newLabel({
         Text = self.Title,
@@ -802,6 +893,7 @@ function Window:_build()
         ZIndex = 3,
         Parent = titleBar,
     })
+
 
     -- Close button
     local closeBtn = Instance.new("TextButton")
@@ -820,6 +912,7 @@ function Window:_build()
         self:Destroy()
     end)
 
+
     -- Minimize button
     local minBtn = Instance.new("TextButton")
     minBtn.Size = UDim2.new(0, 28, 0, 28)
@@ -834,6 +927,7 @@ function Window:_build()
     minBtn.Parent = titleBar
     makeCorner(minBtn, 14)
 
+
     local minimized = false
     minBtn.Activated:Connect(function()
         minimized = not minimized
@@ -841,6 +935,7 @@ function Window:_build()
             and UDim2.new(0, 540, 0, 44)
             or  UDim2.new(0, 540, 0, 380) }, 0.25, Enum.EasingStyle.Quart)
     end)
+
 
     -- Separator line under title
     local sep = newFrame({
@@ -852,6 +947,7 @@ function Window:_build()
         ZIndex = 2,
         Parent = win,
     })
+
 
     -- Tab bar
     local tabBar = newFrame({
@@ -865,6 +961,7 @@ function Window:_build()
     makeListLayout(tabBar, Enum.FillDirection.Horizontal, 4)
     self._tabBar = tabBar
 
+
     -- Content area
     local content = newFrame({
         Size = UDim2.new(1, 0, 1, -82),
@@ -875,6 +972,7 @@ function Window:_build()
         Parent = win,
     })
     self._content = content
+
 
     -- Dragging
     local dragging = false
@@ -902,12 +1000,14 @@ function Window:_build()
         end
     end)
 
+
     -- Toggle keybind
     UserInputService.InputBegan:Connect(function(input, gpe)
         if not gpe and input.KeyCode == self.Toggle then
             self:SetVisible(not sg.Enabled)
         end
     end)
+
 
     -- Entrance animation
     win.Size = UDim2.new(0, 480, 0, 0)
@@ -919,8 +1019,10 @@ function Window:_build()
     end)
 end
 
+
 function Window:AddTab(name)
     local t = self.Theme
+
 
     -- Tab button
     local tabBtn = Instance.new("TextButton")
@@ -934,6 +1036,7 @@ function Window:AddTab(name)
     tabBtn.ZIndex = 3
     tabBtn.Parent = self._tabBar
     makeCorner(tabBtn, t.tabRounding)
+
 
     -- Content scroll frame
     local scroll = Instance.new("ScrollingFrame")
@@ -950,8 +1053,10 @@ function Window:AddTab(name)
     makePadding(scroll, 6, 10, 6, 10)
     makeListLayout(scroll, Enum.FillDirection.Vertical, 5)
 
+
     local tab = Tab.new(name, scroll, t)
     tab._btn = tabBtn
+
 
     local function activate()
         -- Deactivate all
@@ -971,29 +1076,36 @@ function Window:AddTab(name)
         self._active = tab
     end
 
+
     tab._scroll    = scroll
     tab._activate  = activate
 
+
     tabBtn.Activated:Connect(activate)
     table.insert(self._tabs, tab)
+
 
     -- Auto-activate first tab
     if #self._tabs == 1 then
         activate()
     end
 
+
     return tab
 end
+
 
 function Window:SetVisible(visible)
     self._gui.Enabled = visible
 end
+
 
 function Window:SetTheme(themeName)
     -- Live theme switching is complex; simplest approach is recreate.
     -- For now, store and use on next element creation.
     self.Theme = Themes[themeName] or self.Theme
 end
+
 
 function Window:Destroy()
     tween(self._win, { Size = UDim2.new(0, 540, 0, 0), BackgroundTransparency = 1 }, 0.25)
@@ -1003,11 +1115,14 @@ function Window:Destroy()
     end)
 end
 
+
 -- ─── Public API ───────────────────────────────────────────────────────────────
+
 
 function OrcaUI:CreateWindow(options)
     return Window.new(options)
 end
+
 
 function OrcaUI:GetThemes()
     local names = {}
@@ -1017,11 +1132,40 @@ function OrcaUI:GetThemes()
     return names
 end
 
+
 function OrcaUI:AddTheme(name, themeTable)
     Themes[name] = themeTable
 end
 
+
+-- NEW: Function to destroy a window by title
+function OrcaUI:DestroyWindow(title)
+    for _, sg in ipairs(game:GetService("CoreGui"):GetChildren()) do
+        if sg:IsA("ScreenGui") and sg.Name == "OrcaUI_" .. title then
+            sg:Destroy()
+            return true
+        end
+    end
+    for _, sg in ipairs(game:GetService("PlayerGui"):GetChildren()) do
+        if sg:IsA("ScreenGui") and sg.Name == "OrcaUI_" .. title then
+            sg:Destroy()
+            return true
+        end
+    end
+    return false
+end
+
+
+-- NEW: Destroy GUI button helper
+function OrcaUI:AddDestroyButton(tab, windowTitle)
+    return tab:AddButton("Destroy GUI", function()
+        OrcaUI:DestroyWindow(windowTitle)
+    end)
+end
+
+
 -- Expose theme definitions for custom use
 OrcaUI.Themes = Themes
+
 
 return OrcaUI
