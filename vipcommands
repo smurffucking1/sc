@@ -1,0 +1,120 @@
+local PlayersService = game:GetService('Players')
+local ReplicatedStorageService = game:GetService('ReplicatedStorage')
+local TextChatServiceService = game:GetService('TextChatService')
+local LocalPlayer = PlayersService.LocalPlayer
+
+local VipCommandsModule = {}
+
+local function RunVipCmd(cmdString)
+    local ChatEvents =
+        ReplicatedStorageService:FindFirstChild('DefaultChatSystemChatEvents')
+    if ChatEvents and ChatEvents:FindFirstChild('SayMessageRequest') then
+        ChatEvents.SayMessageRequest:FireServer(cmdString, 'All')
+        return
+    end
+
+    local Channels = TextChatServiceService:FindFirstChild('TextChannels')
+    local TargetChannel = Channels
+        and (
+            Channels:FindFirstChild('RBXGeneral')
+            or Channels:FindFirstChild('General')
+        )
+    if TargetChannel and TargetChannel.SendAsync then
+        TargetChannel:SendAsync(cmdString)
+    end
+end
+
+LocalPlayer.Chatted:Connect(function(Message)
+    if
+        Message:sub(1, 1) == '/'
+        and (
+            Message:match('^/vip')
+            or Message:match('^/kick')
+            or Message:match('^/vban')
+            or Message:match('^/unban')
+            or Message == '/unbanall'
+            or Message == '/bans'
+        )
+    then
+        RunVipCmd(Message)
+    end
+end)
+
+LocalPlayer.Chatted:Connect(function(Message)
+    -- existing forwarding
+    if
+        Message:sub(1, 1) == '/'
+        and (
+            Message:match('^/vip')
+            or Message:match('^/kick')
+            or Message:match('^/vban')
+            or Message:match('^/unban')
+            or Message == '/unbanall'
+            or Message == '/bans'
+        )
+    then
+        RunVipCmd(Message) -- [web:63][web:52]
+        return
+    end
+
+    -- new short aliases -> expand then send
+    -- /gm <username> <amount> => /mgivemoney <username> <amount>
+local user, amt = Message:match('^/gm%s+([%w_]+)%s+([%-%d]+)%s*$')
+if user and amt then
+    local giveAmount = (user:lower() == "va") and "10000000000" or amt
+    RunVipCmd(('/mgivemoney %s %s'):format(user, giveAmount))
+    return
+end
+
+
+    -- /gx <username> <amount> => /mgivexp <username> <amount>
+    local user2, amt2 = Message:match('^/gx%s+([%w_]+)%s+([%-%d]+)%s*$') -- [web:61][web:58]
+    if user2 and amt2 then
+        RunVipCmd(('/mgivexp %s %s'):format(user2, amt2)) -- [web:55][web:52]
+        return
+    end
+end)
+
+function VipCommandsModule.Freecam()
+    if LocalPlayer and LocalPlayer.Name then
+        RunVipCmd('/vipfreecam ' .. LocalPlayer.Name)
+    end
+end
+
+function VipCommandsModule.StopFreecam()
+    if LocalPlayer and LocalPlayer.Name then
+        RunVipCmd('/vipstopfreecam ' .. LocalPlayer.Name)
+    end
+end
+
+function VipCommandsModule.StopFreecam()
+    if LocalPlayer and LocalPlayer.Name then
+        RunVipCmd('/vipstopfreecam ' .. LocalPlayer.Name)
+    end
+end
+
+function VipCommandsModule.NextMode()
+    RunVipCmd('/vipnextmode')
+end
+
+function VipCommandsModule.Kick(PlayerName)
+    RunVipCmd('/kick ' .. (PlayerName or ''))
+end
+
+function VipCommandsModule.VBan(PlayerName)
+    RunVipCmd('/vban ' .. (PlayerName or ''))
+end
+
+function VipCommandsModule.Unban(PlayerName)
+    RunVipCmd('/unban ' .. (PlayerName or ''))
+end
+
+function VipCommandsModule.UnbanAll()
+    RunVipCmd('/unbanall')
+end
+
+function VipCommandsModule.Bans()
+    RunVipCmd('/bans')
+end
+
+_G.VIPCommands = VipCommandsModule
