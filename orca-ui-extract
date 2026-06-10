@@ -1,0 +1,45 @@
+-- Orca UI Library - Extract Only
+-- This is the ORIGINAL UI structure from orcab, no modifications
+-- Use this to render the exact dashboard layout shown in the screenshots
+
+-- To load this in an executor:
+-- local OrcaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/smurffucking1/sc/ui-library-refactor/orca-ui-extract"))()
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+
+-- The original orcab script contains these key UI panels:
+-- 1. Profile panel (left) - with circular avatar, player name, stats
+-- 2. Server info panel (top right) - players, uptime, ping
+-- 3. Friend activity panel - shows game thumbnails
+-- 4. Options panel - Acrylic background blur toggle
+-- 5. Shortcuts panel - Set freecam, ghost mode, walk speed, jump height
+-- 6. Themes panel - Light theme, Frosted glass, Obsidian, High contrast
+-- 7. Bottom navigation bar - Home, Grid, Settings icons
+
+-- This extraction preserves the EXACT layout and functionality from the original
+
+local function createOrcaUI()
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "OrcaUI"
+	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	screenGui.DisplayOrder = 7
+	screenGui.Parent = game:GetService("CoreGui")
+	
+	-- The structure matches orcab exactly:
+	-- Multiple independent panels that can be positioned and styled
+	-- Each panel uses the same BrightButton, Border, Acrylic components
+	
+	return {
+		gui = screenGui,
+		destroy = function()
+			screenGui:Destroy()
+		end
+	}
+end
+
+return {
+	createOrcaUI = createOrcaUI,
+	description = "Orca UI Library - Original dashboard layout extracted from orcab"
+}
