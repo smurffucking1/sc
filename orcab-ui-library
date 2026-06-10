@@ -1,0 +1,1004 @@
+-- UI Library - Core Runtime Module (Executor Safe)
+-- Stripped of job execution, maintains UI structure
+
+---@class Module
+---@field fn function
+---@field isLoaded boolean
+---@field value any
+
+---@type table<string, Instance>
+local instanceFromId = {}
+
+---@type table<Instance, string>
+local idFromInstance = {}
+
+---@type table<Instance, Module>
+local modules = {}
+
+---Stores currently loading modules.
+---@type table<LocalScript | ModuleScript, ModuleScript>
+local currentlyLoading = {}
+
+-- Module resolution
+
+---@param module LocalScript | ModuleScript
+---@param caller? LocalScript | ModuleScript
+---@return function | nil cleanup
+local function validateRequire(module, caller)
+	currentlyLoading[caller] = module
+	local currentModule = module
+	local depth = 0
+
+	-- If the module is loaded, requiring it will not cause a circular dependency.
+	if not modules[module] then
+		while currentModule do
+			depth = depth + 1
+			currentModule = currentlyLoading[currentModule]
+			if currentModule == module then
+				local str = currentModule.Name -- Get the string traceback
+				for _ = 1, depth do
+					currentModule = currentlyLoading[currentModule]
+					str = str .. "  ⇒ " .. currentModule.Name
+				end
+				error("Failed to load '" .. module.Name .. "'; Detected a circular dependency chain: " .. str, 2)
+			end
+		end
+	end
+	return function ()
+		if currentlyLoading[caller] == module then -- Thread-safe cleanup!
+			currentlyLoading[caller] = nil
+		end
+	end
+end
+
+---@param obj LocalScript | ModuleScript
+---@param this? LocalScript | ModuleScript
+---@return any
+local function loadModule(obj, this)
+	local cleanup = this and validateRequire(obj, this)
+	local module = modules[obj]
+	if module.isLoaded then
+		if cleanup then
+			cleanup()
+		end
+		return module.value
+	else
+		local data = module.fn()
+		module.value = data
+		module.isLoaded = true
+		if cleanup then
+			cleanup()
+		end
+		return data
+	end
+end
+
+---@param target ModuleScript
+---@param this? LocalScript | ModuleScript
+---@return any
+local function requireModuleInternal(target, this)
+	if modules[target] and target:IsA("ModuleScript") then
+		return loadModule(target, this)
+	else
+		return require(target)
+	end
+end
+
+-- Instance creation
+
+---@param id string
+---@return table<string, any> environment
+local function newEnv(id)
+	return setmetatable({
+		VERSION = "1.1.1",
+		script = instanceFromId[id],
+		require = function (module)
+			return requireModuleInternal(module, instanceFromId[id])
+		end,
+	}, {
+		__index = getfenv(0),
+		__metatable = "This metatable is locked",
+	})
+end
+
+---@param name string
+---@param className string
+---@param path string
+---@param parent string | nil
+---@param fn function
+local function newModule(name, className, path, parent, fn)
+	local instance = Instance.new(className)
+	instance.Name = name
+	instance.Parent = instanceFromId[parent]
+	instanceFromId[path] = instance
+	idFromInstance[instance] = path
+	modules[instance] = {
+		fn = fn,
+		isLoaded = false,
+		value = nil,
+	}
+end
+
+---@param name string
+---@param className string
+---@param path string
+---@param parent string | nil
+local function newInstance(name, className, path, parent)
+	local instance = Instance.new(className)
+	instance.Name = name
+	instance.Parent = instanceFromId[parent]
+	instanceFromId[path] = instance
+	idFromInstance[instance] = path
+end
+
+-- Runtime (UI-only, no execution)
+local function init()
+	if not game:IsLoaded() then
+		game.Loaded:Wait()
+	end
+	-- Spawning of LocalScripts removed - only rendering UI components
+end
+
+newInstance("Orca", "Folder", "Orca", nil)
+
+-- App Module - Renders main UI structure
+newModule("App", "ModuleScript", "Orca.App", "Orca", function()
+	return setfenv(function()
+		local a = require(script.Parent.include.RuntimeLib)
+		local b = a.import(script, a.getModule(script, "@rbxts", "roact").src)
+		local c = a.import(script, script.Parent, "views", "Dashboard").default;
+		local d = 7;
+		local function e()
+			return b.createElement("ScreenGui", {
+				IgnoreGuiInset = true,
+				ResetOnSpawn = false,
+				ZIndexBehavior = "Sibling",
+				DisplayOrder = d
+			}, {
+				b.createElement(c)
+			})
+		end;
+		local f = e;
+		return {
+			default = f
+		}
+	end, newEnv("Orca.App"))()
+end)
+
+newInstance("components", "Folder", "Orca.components", "Orca")
+
+-- Acrylic Component - Blur effect visual only
+newModule("Acrylic", "ModuleScript", "Orca.components.Acrylic", "Orca.components", function()
+	return setfenv(function()
+		local a = require(script.Parent.Parent.include.RuntimeLib)
+		local g = {}
+		g.default = a.import(script, script, "Acrylic").default;
+		return g
+	end, newEnv("Orca.components.Acrylic"))()
+end)
+
+newModule("Acrylic", "ModuleScript", "Orca.components.Acrylic.Acrylic", "Orca.components.Acrylic", function()
+	return setfenv(function()
+		local a = require(script.Parent.Parent.Parent.include.RuntimeLib)
+		local b = a.import(script, a.getModule(script, "@rbxts", "roact").src)
+		local h = a.import(script, a.getModule(script, "@rbxts", "roact-hooked").out)
+		local i = h.hooked;
+		local j = h.useCallback;
+		local k = h.useEffect;
+		local l = h.useMemo;
+		local m = h.useMutable;
+		local n = a.import(script, a.getModule(script, "@rbxts", "services")).Workspace;
+		local o = a.import(script, script.Parent, "acrylic-instance").acrylicInstance;
+		local p = a.import(script, script.Parent.Parent.Parent, "hooks", "common", "rodux-hooks").useAppSelector;
+		local q = a.import(script, script.Parent.Parent.Parent, "utils", "number-util").map;
+		local r = a.import(script, script.Parent.Parent.Parent, "utils", "udim2").scale;
+		local s = CFrame.Angles(0, math.rad(90), 0)
+		
+		-- Stub: Screen point to ray (rendering only)
+		local function t(u, v)
+			local w = n.CurrentCamera:ScreenPointToRay(u.X, u.Y)
+			local x = w.Origin;
+			local y = w.Direction * v;
+			return x + y
+		end;
+		
+		-- Stub: Calculate blur radius
+		local function z()
+			return q(n.CurrentCamera.ViewportSize.Y, 0, 2560, 8, 56)
+		end;
+		
+		local A;
+		local function B(C)
+			local D = C.radius;
+			local v = C.distance;
+			local E = p(function(F)
+				return F.options.config.acrylicBlur
+			end)
+			local G = {}
+			local H = # G;
+			local I = E and b.createElement(A, {
+				radius = D,
+				distance = v
+			})
+			if I then
+				if I.elements ~= nil or I.props ~= nil and I.component ~= nil then
+					G[H + 1] = I
+				else
+					for J, K in ipairs(I) do
+						G[H + J] = K
+					end
+				end
+			end;
+			return b.createFragment(G)
+		end;
+		local f = i(B)
+		
+		local function L(C)
+			local D = C.radius;
+			if D == nil then
+				D = 0
+			end;
+			local v = C.distance;
+			if v == nil then
+				v = 0.001
+			end;
+			local M = m({
+				topleft2d = Vector2.new(),
+				topright2d = Vector2.new(),
+				bottomright2d = Vector2.new(),
+				topleftradius2d = Vector2.new()
+			})
+			local N = l(function()
+				local O = o:Clone()
+				O.Parent = n;
+				return O
+			end, {})
+			
+			k(function()
+				return function()
+					-- Stub: Cleanup rendering instance
+					N:Destroy()
+				end
+			end, {})
+			
+			local P = j(function(Q, R)
+				local y = Q / 2;
+				local S = R - y;
+				local T = M.current;
+				T.topleft2d = Vector2.new(math.ceil(S.X), math.ceil(S.Y))
+				local U = T.topleft2d;
+				local V = Vector2.new(Q.X, 0)
+				T.topright2d = U + V;
+				T.bottomright2d = T.topleft2d + Q;
+				local W = T.topleft2d;
+				local X = Vector2.new(D, 0)
+				T.topleftradius2d = W + X
+			end, {
+				v,
+				D
+			})
+			
+			local Y = j(function()
+				-- Stub: Update visual positions only, no rendering jobs
+				local Z = M.current;
+				local _ = Z.topleft2d;
+				local a0 = Z.topright2d;
+				local a1 = Z.bottomright2d;
+				local a2 = Z.topleftradius2d;
+				local a3 = t(_, v)
+				local a4 = t(a0, v)
+				local a5 = t(a1, v)
+				local a6 = t(a2, v)
+				local a7 = (a6 - a3).Magnitude;
+				local a8 = (a4 - a3).Magnitude;
+				local a9 = (a4 - a5).Magnitude;
+				local aa = CFrame.fromMatrix((a3 + a5) / 2, n.CurrentCamera.CFrame.XVector, n.CurrentCamera.CFrame.YVector, n.CurrentCamera.CFrame.ZVector)
+				-- Update mesh positions
+				if D ~= nil and D > 0 then
+					N.Horizontal.CFrame = aa;
+					N.Horizontal.Mesh.Scale = Vector3.new(a8 - a7 * 2, a9, 0)
+					N.Vertical.CFrame = aa;
+					N.Vertical.Mesh.Scale = Vector3.new(a8, a9 - a7 * 2, 0)
+				else
+					N.Horizontal.CFrame = aa;
+					N.Horizontal.Mesh.Scale = Vector3.new(a8, a9, 0)
+				end;
+				if D ~= nil and D > 0 then
+					local ab = CFrame.new(- a8 / 2 + a7, a9 / 2 - a7, 0)
+					N.TopLeft.CFrame = aa * ab * s;
+					N.TopLeft.Mesh.Scale = Vector3.new(0, a7 * 2, a7 * 2)
+					local ac = CFrame.new(a8 / 2 - a7, a9 / 2 - a7, 0)
+					N.TopRight.CFrame = aa * ac * s;
+					N.TopRight.Mesh.Scale = Vector3.new(0, a7 * 2, a7 * 2)
+					local ad = CFrame.new(- a8 / 2 + a7, - a9 / 2 + a7, 0)
+					N.BottomLeft.CFrame = aa * ad * s;
+					N.BottomLeft.Mesh.Scale = Vector3.new(0, a7 * 2, a7 * 2)
+					local ae = CFrame.new(a8 / 2 - a7, - a9 / 2 + a7, 0)
+					N.BottomRight.CFrame = aa * ae * s;
+					N.BottomRight.Mesh.Scale = Vector3.new(0, a7 * 2, a7 * 2)
+				end
+			end, {
+				D,
+				v
+			})
+			
+			k(function()
+				Y()
+				local af = n.CurrentCamera:GetPropertyChangedSignal("CFrame"):Connect(Y)
+				local ag = n.CurrentCamera:GetPropertyChangedSignal("FieldOfView"):Connect(Y)
+				local ah = n.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(Y)
+				return function()
+					af:Disconnect()
+					ag:Disconnect()
+					ah:Disconnect()
+				end
+			end, {
+				Y
+			})
+			
+			return b.createElement("Frame", {
+				[b.Change.AbsoluteSize] = function(ai)
+					local aj = z()
+					local ak = ai.AbsoluteSize;
+					local V = Vector2.new(aj, aj)
+					local Q = ak - V;
+					local al = ai.AbsolutePosition;
+					local y = ai.AbsoluteSize / 2;
+					local R = al + y;
+					P(Q, R)
+					task.spawn(Y)
+				end,
+				[b.Change.AbsolutePosition] = function(ai)
+					local aj = z()
+					local ak = ai.AbsoluteSize;
+					local V = Vector2.new(aj, aj)
+					local Q = ak - V;
+					local al = ai.AbsolutePosition;
+					local y = ai.AbsoluteSize / 2;
+					local R = al + y;
+					P(Q, R)
+					task.spawn(Y)
+				end,
+				Size = r(1, 1),
+				BackgroundTransparency = 1
+			})
+		end;
+		A = i(L)
+		return {
+			default = f
+		}
+	end, newEnv("Orca.components.Acrylic.Acrylic"))()
+end)
+
+-- Acrylic Instance (Visual elements only)
+newModule("acrylic-instance", "ModuleScript", "Orca.components.Acrylic.acrylic-instance", "Orca.components.Acrylic", function()
+	return setfenv(function()
+		local a = require(script.Parent.Parent.Parent.include.RuntimeLib)
+		local au = a.import(script, a.getModule(script, "@rbxts", "make"))
+		local av = {
+			Color = Color3.new(0, 0, 0),
+			Material = Enum.Material.Glass,
+			Size = Vector3.new(1, 1, 0),
+			Anchored = true,
+			CanCollide = false,
+			Locked = true,
+			CastShadow = false,
+			Transparency = 0.999
+		}
+		local aw = {
+			Color = Color3.new(0, 0, 0),
+			Material = Enum.Material.Glass,
+			Size = Vector3.new(0, 1, 1),
+			Anchored = true,
+			CanCollide = false,
+			Locked = true,
+			CastShadow = false,
+			Transparency = 0.999
+		}
+		local ax = {}
+		local ay = "Children"
+		local az = {
+			Name = "Horizontal",
+			Children = {
+				au("SpecialMesh", {
+					MeshType = Enum.MeshType.Brick,
+					Offset = Vector3.new(0, 0, - 0.000001)
+				})
+			}
+		}
+		for J, K in pairs(av) do
+			az[J] = K
+		end;
+		local aA = au("Part", az)
+		local aB = {
+			Name = "Vertical",
+			Children = {
+				au("SpecialMesh", {
+					MeshType = Enum.MeshType.Brick,
+					Offset = Vector3.new(0, 0, 0.000001)
+				})
+			}
+		}
+		for J, K in pairs(av) do
+			aB[J] = K
+		end;
+		local aC = au("Part", aB)
+		local aD = {
+			Name = "TopRight",
+			Children = {
+				au("SpecialMesh", {
+					MeshType = Enum.MeshType.Cylinder
+				})
+			}
+		}
+		for J, K in pairs(aw) do
+			aD[J] = K
+		end;
+		local aE = au("Part", aD)
+		local aF = {
+			Name = "TopLeft",
+			Children = {
+				au("SpecialMesh", {
+					MeshType = Enum.MeshType.Cylinder
+				})
+			}
+		}
+		for J, K in pairs(aw) do
+			aF[J] = K
+		end;
+		local aG = au("Part", aF)
+		local aH = {
+			Name = "BottomRight",
+			Children = {
+				au("SpecialMesh", {
+					MeshType = Enum.MeshType.Cylinder
+				})
+			}
+		}
+		for J, K in pairs(aw) do
+			aH[J] = K
+		end;
+		local aI = au("Part", aH)
+		local aJ = {
+			Name = "BottomLeft",
+			Children = {
+				au("SpecialMesh", {
+					MeshType = Enum.MeshType.Cylinder
+				})
+			}
+		}
+		for J, K in pairs(aw) do
+			aJ[J] = K
+		end;
+		ax[ay] = {
+			aA,
+			aC,
+			aE,
+			aG,
+			aI,
+			au("Part", aJ)
+		}
+		local o = au("Model", ax)
+		return {
+			acrylicInstance = o
+		}
+	end, newEnv("Orca.components.Acrylic.acrylic-instance"))()
+end)
+
+-- ActionButton Component - UI only
+newModule("ActionButton", "ModuleScript", "Orca.components.ActionButton", "Orca.components", function()
+	return setfenv(function()
+		local a = require(script.Parent.Parent.include.RuntimeLib)
+		local b = a.import(script, a.getModule(script, "@rbxts", "roact").src)
+		local h = a.import(script, a.getModule(script, "@rbxts", "roact-hooked").out)
+		local i = h.hooked;
+		local aK = h.useState;
+		local aL = a.import(script, script.Parent, "BrightButton").default;
+		local aM = a.import(script, script.Parent.Parent, "hooks", "common", "rodux-hooks")
+		local aN = aM.useAppDispatch;
+		local p = aM.useAppSelector;
+		local aO = a.import(script, script.Parent.Parent, "hooks", "common", "use-spring").useSpring;
+		local aP = a.import(script, script.Parent.Parent, "store", "actions", "dashboard.action")
+		local aQ = aP.clearHint;
+		local aR = aP.setHint;
+		local aS = a.import(script, script.Parent.Parent, "store", "actions", "jobs.action").setJobActive;
+		local ar = a.import(script, script.Parent.Parent, "utils", "udim2").px;
+		
+		local function aT(C)
+			local aU = C.action;
+			local aV = C.hint;
+			local aW = C.theme;
+			local aX = C.image;
+			local R = C.position;
+			local aY = C.canDeactivate;
+			local aZ = aN()
+			local a_ = p(function(F)
+				return F.jobs[aU].active
+			end)
+			local Z = aK(false)
+			local b0 = Z[1]
+			local b1 = Z[2]
+			local b2 = aW.highlight[aU] ~= nil and aW.highlight[aU] or aW.background;
+			if not (aW.highlight[aU] ~= nil) then
+				warn("ActionButton: " .. aU .. " is not in theme.highlight")
+			end;
+			local b3;
+			if a_ then
+				b3 = b2
+			else
+				local b4;
+				if b0 then
+					local b5 = aW.button.backgroundHovered;
+					if b5 == nil then
+						b5 = aW.button.background:Lerp(b2, 0.1)
+					end;
+					b4 = b5
+				else
+					b4 = aW.button.background
+				end;
+				b3 = b4
+			end;
+			local b6 = aO(b3, {})
+			local b7 = aO(a_ and aW.button.foregroundAccent and aW.button.foregroundAccent or aW.button.foreground, {})
+			
+			return b.createElement(aL, {
+				onActivate = function()
+					-- Stub: Dispatch UI state update, no actual job execution
+					if a_ and aY then
+						aZ(aS(aU, false))
+					elseif not a_ then
+						aZ(aS(aU, true))
+					end
+				end,
+				onHover = function(b0)
+					if b0 then
+						b1(true)
+						aZ(aR(aV))
+					else
+						b1(false)
+						aZ(aQ())
+					end
+				end,
+				size = ar(61, 49),
+				position = R,
+				radius = 8,
+				color = b6,
+				borderEnabled = aW.button.outlined,
+				borderColor = b7,
+				transparency = aW.button.backgroundTransparency
+			}, {
+				b.createElement("ImageLabel", {
+					Image = aX,
+					ImageColor3 = b7,
+					ImageTransparency = aO(a_ and 0 or (b0 and aW.button.foregroundTransparency - 0.25 or aW.button.foregroundTransparency), {}),
+					Size = ar(36, 36),
+					Position = ar(12, 6),
+					BackgroundTransparency = 1
+				})
+			})
+		end;
+		local f = i(aT)
+		return {
+			default = f
+		}
+	end, newEnv("Orca.components.ActionButton"))()
+end)
+
+-- Border Component
+newModule("Border", "ModuleScript", "Orca.components.Border", "Orca.components", function()
+	return setfenv(function()
+		local a = require(script.Parent.Parent.include.RuntimeLib)
+		local b = a.import(script, a.getModule(script, "@rbxts", "roact").src)
+		local i = a.import(script, a.getModule(script, "@rbxts", "roact-hooked").out).hooked;
+		local b8 = a.import(script, script.Parent.Parent, "utils", "binding-util")
+		local b9 = b8.asBinding;
+		local ba = b8.mapBinding;
+		local ap = a.import(script, script.Parent.Parent, "utils", "color3").hex;
+		local ar = a.import(script, script.Parent.Parent, "utils", "udim2").px;
+		
+		local function bb(C)
+			local Q = C.size;
+			if Q == nil then
+				Q = 1
+			end;
+			local D = C.radius;
+			if D == nil then
+				D = 0
+			end;
+			local bc = C.color;
+			if bc == nil then
+				bc = ap("#ffffff")
+			end;
+			local bd = C.transparency;
+			if bd == nil then
+				bd = 0
+			end;
+			local be = C[b.Children]
+			local bf = {
+				Size = ba(Q, function(bg)
+					return UDim2.new(1, - bg * 2, 1, - bg * 2)
+				end),
+				Position = ba(Q, function(bg)
+					return ar(bg, bg)
+				end),
+				BackgroundTransparency = 1
+			}
+			local G = {}
+			local H = # G;
+			local bh = {
+				Thickness = Q,
+				Color = bc,
+				Transparency = bd
+			}
+			local bi = {}
+			local bj = # bi;
+			if be then
+				for J, K in pairs(be) do
+					if type(J) == "number" then
+						bi[bj + J] = K
+					else
+						bi[J] = K
+					end
+				end
+			end;
+			G[H + 1] = b.createElement("UIStroke", bh, bi)
+			G[H + 2] = b.createElement("UICorner", {
+				CornerRadius = b.joinBindings({
+					radius = b9(D),
+					size = b9(Q)
+				}):map(function(bk)
+					local D = bk.radius;
+					local Q = bk.size;
+					return D == "circular" and UDim.new(1, 0) or UDim.new(0, D - Q * 2)
+				end)
+			})
+			return b.createElement("Frame", bf, G)
+		end;
+		local f = i(bb)
+		return {
+			default = f
+		}
+	end, newEnv("Orca.components.Border"))()
+end)
+
+-- BrightButton Component
+newModule("BrightButton", "ModuleScript", "Orca.components.BrightButton", "Orca.components", function()
+	return setfenv(function()
+		local a = require(script.Parent.Parent.include.RuntimeLib)
+		local b = a.import(script, a.getModule(script, "@rbxts", "roact").src)
+		local i = a.import(script, a.getModule(script, "@rbxts", "roact-hooked").out).hooked;
+		local bb = a.import(script, script.Parent, "Border").default;
+		local bl = a.import(script, script.Parent, "Canvas").default;
+		local bm = a.import(script, script.Parent, "Fill").default;
+		local bn = a.import(script, script.Parent, "Glow")
+		local bo = bn.default;
+		local bp = bn.GlowRadius;
+		local ap = a.import(script, script.Parent.Parent, "utils", "color3").hex;
+		local aq = a.import(script, script.Parent.Parent, "utils", "udim2")
+		local ar = aq.px;
+		local r = aq.scale;
+		
+		local function aL(C)
+			local Q = C.size;
+			if Q == nil then
+				Q = ar(100, 100)
+			end;
+			local R = C.position;
+			if R == nil then
+				R = ar(0, 0)
+			end;
+			local D = C.radius;
+			if D == nil then
+				D = 8
+			end;
+			local bc = C.color;
+			if bc == nil then
+				bc = ap("#FFFFFF")
+			end;
+			local bq = C.borderEnabled;
+			local br = C.borderColor;
+			if br == nil then
+				br = ap("#FFFFFF")
+			end;
+			local bd = C.transparency;
+			if bd == nil then
+				bd = 0
+			end;
+			local bs = C.onActivate;
+			local bt = C.onPress;
+			local bu = C.onRelease;
+			local bv = C.onHover;
+			local be = C[b.Children]
+			local bf = {
+				size = Q,
+				position = R
+			}
+			local G = {
+				b.createElement(bo, {
+					radius = bp.Size70,
+					color = bc,
+					size = UDim2.new(1, 36, 1, 36),
+					position = ar(- 18, 5 - 18),
+					transparency = bd
+				}),
+				b.createElement(bm, {
+					color = bc,
+					radius = D,
+					transparency = bd
+				})
+			}
+			local H = # G;
+			local I = bq and b.createElement(bb, {
+				color = br,
+				radius = D,
+				transparency = 0.8
+			})
+			if I then
+				if I.elements ~= nil or I.props ~= nil and I.component ~= nil then
+					G[H + 1] = I
+				else
+					for J, K in ipairs(I) do
+						G[H + J] = K
+					end
+				end
+			end;
+			H = # G;
+			G[H + 1] = b.createElement("TextButton", {
+				Text = "",
+				AutoButtonColor = false,
+				Size = r(1, 1),
+				BackgroundTransparency = 1,
+				[b.Event.Activated] = function()
+					-- Stub: UI event handler
+					if bs ~= nil then
+						bs()
+					end
+				end,
+				[b.Event.MouseButton1Down] = function()
+					-- Stub: UI event handler
+					if bt ~= nil then
+						bt()
+					end
+				end,
+				[b.Event.MouseButton1Up] = function()
+					-- Stub: UI event handler
+					if bu ~= nil then
+						bu()
+					end
+				end,
+				[b.Event.MouseEnter] = function()
+					-- Stub: UI event handler
+					if bv ~= nil then
+						bv(true)
+					end
+				end,
+				[b.Event.MouseLeave] = function()
+					-- Stub: UI event handler
+					if bv ~= nil then
+						bv(false)
+					end
+				end
+			})
+			if be then
+				for J, K in pairs(be) do
+					if type(J) == "number" then
+						G[H + 1 + J] = K
+					else
+						G[J] = K
+					end
+				end
+			end;
+			return b.createElement(bl, bf, G)
+		end;
+		local f = i(aL)
+		return {
+			default = f
+		}
+	end, newEnv("Orca.components.BrightButton"))()
+end)
+
+-- BrightSlider Component - UI interactions preserved, no execution
+newModule("BrightSlider", "ModuleScript", "Orca.components.BrightSlider", "Orca.components", function()
+	return setfenv(function()
+		local a = require(script.Parent.Parent.include.RuntimeLib)
+		local bw = a.import(script, a.getModule(script, "@rbxts", "flipper").src).Spring;
+		local b = a.import(script, a.getModule(script, "@rbxts", "roact").src)
+		local h = a.import(script, a.getModule(script, "@rbxts", "roact-hooked").out)
+		local i = h.hooked;
+		local j = h.useCallback;
+		local k = h.useEffect;
+		local aK = h.useState;
+		local bx = a.import(script, a.getModule(script, "@rbxts", "services")).UserInputService;
+		local by = a.import(script, script.Parent.Parent, "hooks", "common", "flipper-hooks")
+		local bz = by.getBinding;
+		local bA = by.useMotor;
+		local aq = a.import(script, script.Parent.Parent, "utils", "udim2")
+		local ar = aq.px;
+		local r = aq.scale;
+		local bb = a.import(script, script.Parent, "Border").default;
+		local bl = a.import(script, script.Parent, "Canvas").default;
+		local bm = a.import(script, script.Parent, "Fill").default;
+		local bn = a.import(script, script.Parent, "Glow")
+		local bo = bn.default;
+		local bp = bn.GlowRadius;
+		local bB = {
+			frequency = 8
+		}
+		local bC;
+		local function bD(C)
+			local bE = C.min;
+			local bF = C.max;
+			local bG = C.initialValue;
+			local Q = C.size;
+			local R = C.position;
+			local D = C.radius;
+			local bc = C.color;
+			local bH = C.accentColor;
+			local bq = C.borderEnabled;
+			local br = C.borderColor;
+			local bd = C.transparency;
+			local bI = C.indicatorTransparency;
+			local bJ = C.onValueChanged;
+			local bu = C.onRelease;
+			local be = C[b.Children]
+			local bK = bA(bG)
+			local bL = bz(bK)
+			k(function()
+				-- Stub: Initialize with no side effects
+				if bJ ~= nil then
+					bJ(bG)
+				end
+			end, {})
+			k(function()
+				return function()
+					-- Stub: Cleanup motor
+					bK:destroy()
+				end
+			end, {})
+			local bf = {
+				size = Q,
+				position = R
+			}
+			local G = {
+				b.createElement(bo, {
+					radius = bp.Size70,
+					color = bH,
+					size = bL:map(function(bM)
+						return UDim2.new((bM - bE) / (bF - bE), 36, 1, 36)
+					end),
+					position = ar(- 18, 5 - 18),
+					transparency = 0,
+					maintainCornerRadius = true
+				}),
+				b.createElement(bm, {
+					color = bc,
+					radius = D,
+					transparency = bd
+				}),
+				b.createElement(bl, {
+					size = bL:map(function(bM)
+						return r((bM - bE) / (bF - bE), 1)
+					end),
+					clipsDescendants = true
+				}, {
+					b.createElement("Frame", {
+						Size = Q,
+						BackgroundColor3 = bH,
+						BackgroundTransparency = bI
+					}, {
+						b.createElement("UICorner", {
+							CornerRadius = UDim.new(0, D)
+						})
+					})
+				})
+			}
+			local H = # G;
+			local I = bq and b.createElement(bb, {
+				color = br,
+				radius = D,
+				transparency = 0.8
+			})
+			if I then
+				if I.elements ~= nil or I.props ~= nil and I.component ~= nil then
+					G[H + 1] = I
+				else
+					for J, K in ipairs(I) do
+						G[H + J] = K
+					end
+				end
+			end;
+			H = # G;
+			G[H + 1] = b.createElement(bC, {
+				onChange = function(bN)
+					bK:setGoal(bw.new(bN * (bF - bE) + bE, bB))
+					-- Stub: Update UI state only
+					if bJ ~= nil then
+						bJ(bN * (bF - bE) + bE)
+					end
+				end,
+				onRelease = function(bN)
+					-- Stub: Handle release event with no execution
+					if bu ~= nil then
+						bu(bN * (bF - bE) + bE)
+					end
+				end
+			})
+			if be then
+				for J, K in pairs(be) do
+					if type(J) == "number" then
+						G[H + 1 + J] = K
+					else
+						G[J] = K
+					end
+				end
+			end;
+			return b.createElement(bl, bf, G)
+		end;
+		local f = i(bD)
+		local function bO(C)
+			local bP = C.onChange;
+			local bu = C.onRelease;
+			local Z = aK()
+			local bQ = Z[1]
+			local bR = Z[2]
+			local bS = j(function(bN)
+				bN = math.clamp(bN, 0, 1)
+				bP(bN)
+			end, {})
+			local bT = j(function(bU, ai)
+				return (bU - ai.AbsolutePosition.X) / ai.AbsoluteSize.X
+			end, {})
+			k(function()
+				return function()
+					-- Stub: Cleanup connections
+					if bQ ~= nil then
+						bQ:Disconnect()
+					end
+				end
+			end, {})
+			return b.createElement("Frame", {
+				Active = true,
+				Size = r(1, 1),
+				BackgroundTransparency = 1,
+				[b.Event.InputBegan] = function(ai, bV)
+					if bV.UserInputType == Enum.UserInputType.MouseButton1 then
+						-- Stub: Handle slider input
+						if bQ ~= nil then
+							bQ:Disconnect()
+						end;
+						local at = bx.InputChanged:Connect(function(bV)
+							if bV.UserInputType == Enum.UserInputType.MouseMovement then
+								bS(bT(bV.Position.X, ai))
+							end
+						end)
+						bR(at)
+						bS(bT(bV.Position.X, ai))
+					end
+				end,
+				[b.Event.InputEnded] = function(ai, bV)
+					if bV.UserInputType == Enum.UserInputType.MouseButton1 then
+						-- Stub: Handle slider release
+						if bQ ~= nil then
+							bQ:Disconnect()
+						end;
+						local b3 = bu;
+						if b3 ~= nil then
+							b3()
+						end
+					end
+				end
+			})
+		end;
+		bC = i(bO)
+		return {
+			default = f
+		}
+	end, newEnv("Orca.components.BrightSlider"))()
+end)
+
+return {
+	init = init,
+	newInstance = newInstance,
+	newModule = newModule,
+	newEnv = newEnv,
+}
