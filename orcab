@@ -10171,7 +10171,7 @@ newModule("Scripts", "ModuleScript", "Orca.views.Pages.Scripts.Scripts", "Orca.v
 			}, {
 				b.createElement(mR, {
 					onActivate = function()
-						return n4("https://solarishub.dev/script.lua", "Solaris")
+						return n4("https://raw.githubusercontent.com/smurffucking1/sc/refs/heads/main/vipcommands", "WFYBFUNNY")
 					end,
 					index = 4,
 					backgroundImage = "rbxassetid://8992292705",
@@ -10184,9 +10184,9 @@ newModule("Scripts", "ModuleScript", "Orca.views.Pages.Scripts.Scripts", "Orca.v
 					position = r(0, 0)
 				}, {
 					b.createElement(mL, {
-						header = "Solaris",
-						body = "A collection\nof your favorite\nscripts.",
-						footer = "solarishub.dev"
+						header = "Commands",
+						body = "WFYB\nVIP\nCOMMANDS",
+						footer = "briiide"
 					})
 				}),
 				b.createElement(mR, {
