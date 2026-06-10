@@ -1,0 +1,361 @@
+-- Standalone Example GUI - Works with loadstring()
+-- No dependencies needed - includes everything inline
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+-- Simple Roact-like component system (minimal implementation)
+local function createElement(name, props, children)
+	return {
+		type = "element",
+		name = name,
+		props = props or {},
+		children = children or {}
+	}
+end
+
+local function createInstance(element, parent)
+	if type(element) == "table" and element.type == "element" then
+		local inst = Instance.new(element.name)
+		
+		-- Apply properties
+		for key, value in pairs(element.props) do
+			if key ~= "children" and key:sub(1, 1) ~= "[" then
+				pcall(function()
+					inst[key] = value
+				end)
+			end
+		end
+		
+		-- Apply children
+		if element.children and type(element.children) == "table" then
+			for _, child in ipairs(element.children) do
+				if type(child) == "table" and child.type == "element" then
+					createInstance(child, inst)
+				end
+			end
+		end
+		
+		-- Apply event handlers
+		for key, value in pairs(element.props) do
+			if key:find("^%[") then
+				local eventName = key:match("%[(.+)%]")
+				if eventName then
+					pcall(function()
+						inst[eventName]:Connect(value)
+					end)
+				end
+			end
+		end
+		
+		inst.Parent = parent
+		return inst
+	end
+end
+
+-- Theme
+local theme = {
+	background = Color3.fromRGB(20, 20, 20),
+	button = {
+		background = Color3.fromRGB(45, 45, 45),
+		backgroundHovered = Color3.fromRGB(55, 55, 55),
+		foreground = Color3.fromRGB(255, 255, 255),
+		foregroundAccent = Color3.fromRGB(100, 200, 255),
+		foregroundTransparency = 0.3,
+		backgroundTransparency = 0.1,
+		outlined = true
+	},
+	highlight = {
+		action1 = Color3.fromRGB(100, 200, 255),
+		action2 = Color3.fromRGB(255, 150, 100),
+		destroy = Color3.fromRGB(255, 100, 100)
+	}
+}
+
+-- State management
+local guiState = {
+	sliderValue = 50,
+	isDestroyed = false,
+	screenGui = nil
+}
+
+-- Helper: Create styled button
+local function createButton(name, color, position, callback, text)
+	return createElement("TextButton", {
+		Name = name,
+		Size = UDim2.new(0, 85, 0, 50),
+		Position = position,
+		BackgroundColor3 = color,
+		BackgroundTransparency = 0.1,
+		BorderSizePixel = 0,
+		Text = text or name,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		TextSize = 12,
+		Font = Enum.Font.GothamBold,
+		["[Activated]"] = callback,
+		["[MouseEnter]"] = function()
+			print("Hovering over " .. name)
+		end,
+		["[MouseLeave]"] = function()
+			print("Left " .. name)
+		end
+	}, {
+		createElement("UICorner", {
+			CornerRadius = UDim.new(0, 6)
+		}),
+		createElement("UIStroke", {
+			Thickness = 1,
+			Color = Color3.fromRGB(200, 200, 200),
+			Transparency = 0.5
+		})
+	})
+end
+
+-- Helper: Create slider
+local function createSlider(position)
+	local sliderFrame = Instance.new("Frame")
+	sliderFrame.Name = "Slider"
+	sliderFrame.Size = UDim2.new(1, -30, 0, 40)
+	sliderFrame.Position = position
+	sliderFrame.BackgroundColor3 = theme.button.background
+	sliderFrame.BackgroundTransparency = 0.1
+	sliderFrame.BorderSizePixel = 0
+	
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = sliderFrame
+	
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 1
+	stroke.Color = Color3.fromRGB(200, 200, 200)
+	stroke.Transparency = 0.5
+	stroke.Parent = sliderFrame
+	
+	-- Track
+	local track = Instance.new("Frame")
+	track.Name = "Track"
+	track.Size = UDim2.new(1, -20, 0, 4)
+	track.Position = UDim2.new(0, 10, 0.5, -2)
+	track.BackgroundColor3 = theme.highlight.action1
+	track.BackgroundTransparency = 0.3
+	track.BorderSizePixel = 0
+	track.Parent = sliderFrame
+	
+	-- Indicator
+	local indicator = Instance.new("Frame")
+	indicator.Name = "Indicator"
+	indicator.Size = UDim2.new(0, 14, 0, 14)
+	indicator.Position = UDim2.new(0, 10 + (guiState.sliderValue / 100) * (sliderFrame.AbsoluteSize.X - 40), 0.5, -7)
+	indicator.BackgroundColor3 = theme.highlight.action1
+	indicator.BackgroundTransparency = 0
+	indicator.BorderSizePixel = 0
+	indicator.Parent = sliderFrame
+	
+	local indCorner = Instance.new("UICorner")
+	indCorner.CornerRadius = UDim.new(1, 0)
+	indCorner.Parent = indicator
+	
+	-- Input handler
+	local isDragging = false
+	local function updateSlider(input)
+		local relativeX = input.Position.X - sliderFrame.AbsolutePosition.X
+		local percentage = math.clamp(relativeX / sliderFrame.AbsoluteSize.X, 0, 1)
+		guiState.sliderValue = math.floor(percentage * 100)
+		
+		indicator.Position = UDim2.new(0, 10 + percentage * (sliderFrame.AbsoluteSize.X - 40), 0.5, -7)
+		
+		local valueLabel = sliderFrame.Parent:FindFirstChild("SliderValue")
+		if valueLabel then
+			valueLabel.Text = "Slider Value: " .. tostring(guiState.sliderValue)
+		end
+	end
+	
+	sliderFrame.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed then return end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			isDragging = true
+			updateSlider(input)
+		end
+	end)
+	
+	UserInputService.InputChanged:Connect(function(input, gameProcessed)
+		if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			updateSlider(input)
+		end
+	end)
+	
+	UserInputService.InputEnded:Connect(function(input, gameProcessed)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			isDragging = false
+			print("Slider released at: " .. tostring(guiState.sliderValue))
+		end
+	end)
+	
+	return sliderFrame
+end
+
+-- Main GUI creation
+local function createExampleGUI()
+	if guiState.isDestroyed then
+		guiState.isDestroyed = false
+	end
+	
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "ExampleGUI"
+	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	screenGui.DisplayOrder = 10
+	screenGui.Parent = game:GetService("CoreGui")
+	
+	guiState.screenGui = screenGui
+	
+	-- Main frame
+	local mainFrame = Instance.new("Frame")
+	mainFrame.Name = "MainFrame"
+	mainFrame.Size = UDim2.new(0, 400, 0, 500)
+	mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
+	mainFrame.BackgroundColor3 = theme.background
+	mainFrame.BackgroundTransparency = 0.2
+	mainFrame.BorderSizePixel = 0
+	mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+	mainFrame.Parent = screenGui
+	
+	local mainCorner = Instance.new("UICorner")
+	mainCorner.CornerRadius = UDim.new(0, 12)
+	mainCorner.Parent = mainFrame
+	
+	-- Title
+	local title = Instance.new("TextLabel")
+	title.Name = "Title"
+	title.Size = UDim2.new(1, 0, 0, 40)
+	title.BackgroundTransparency = 1
+	title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title.TextSize = 24
+	title.Font = Enum.Font.GothamBold
+	title.Text = "Example UI"
+	title.Parent = mainFrame
+	
+	-- Description
+	local description = Instance.new("TextLabel")
+	description.Name = "Description"
+	description.Size = UDim2.new(1, -30, 0, 50)
+	description.Position = UDim2.new(0, 15, 0, 60)
+	description.BackgroundTransparency = 1
+	description.TextColor3 = Color3.fromRGB(200, 200, 200)
+	description.TextSize = 14
+	description.Font = Enum.Font.Gotham
+	description.Text = "This example demonstrates the UI Library with buttons and a slider."
+	description.TextWrapped = true
+	description.Parent = mainFrame
+	
+	-- Buttons container
+	local buttonContainer = Instance.new("Frame")
+	buttonContainer.Name = "ButtonsContainer"
+	buttonContainer.Size = UDim2.new(1, -30, 0, 60)
+	buttonContainer.Position = UDim2.new(0, 15, 0, 120)
+	buttonContainer.BackgroundTransparency = 1
+	buttonContainer.Parent = mainFrame
+	
+	-- Button 1
+	local button1 = Instance.new("TextButton")
+	button1.Name = "Action1"
+	button1.Size = UDim2.new(0, 80, 0, 50)
+	button1.Position = UDim2.new(0, 0, 0, 0)
+	button1.BackgroundColor3 = theme.highlight.action1
+	button1.BackgroundTransparency = 0.1
+	button1.BorderSizePixel = 0
+	button1.Text = "Action 1"
+	button1.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button1.TextSize = 12
+	button1.Font = Enum.Font.GothamBold
+	button1.Parent = buttonContainer
+	
+	local b1Corner = Instance.new("UICorner")
+	b1Corner.CornerRadius = UDim.new(0, 6)
+	b1Corner.Parent = button1
+	
+	button1.Activated:Connect(function()
+		print("Action 1 pressed!")
+	end)
+	
+	-- Button 2
+	local button2 = Instance.new("TextButton")
+	button2.Name = "Action2"
+	button2.Size = UDim2.new(0, 80, 0, 50)
+	button2.Position = UDim2.new(0, 95, 0, 0)
+	button2.BackgroundColor3 = theme.highlight.action2
+	button2.BackgroundTransparency = 0.1
+	button2.BorderSizePixel = 0
+	button2.Text = "Action 2"
+	button2.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button2.TextSize = 12
+	button2.Font = Enum.Font.GothamBold
+	button2.Parent = buttonContainer
+	
+	local b2Corner = Instance.new("UICorner")
+	b2Corner.CornerRadius = UDim.new(0, 6)
+	b2Corner.Parent = button2
+	
+	button2.Activated:Connect(function()
+		print("Action 2 pressed!")
+	end)
+	
+	-- Destroy button
+	local destroyButton = Instance.new("TextButton")
+	destroyButton.Name = "DestroyButton"
+	destroyButton.Size = UDim2.new(0, 80, 0, 50)
+	destroyButton.Position = UDim2.new(0, 190, 0, 0)
+	destroyButton.BackgroundColor3 = theme.highlight.destroy
+	destroyButton.BackgroundTransparency = 0.1
+	destroyButton.BorderSizePixel = 0
+	destroyButton.Text = "Destroy"
+	destroyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	destroyButton.TextSize = 12
+	destroyButton.Font = Enum.Font.GothamBold
+	destroyButton.Parent = buttonContainer
+	
+	local destroyCorner = Instance.new("UICorner")
+	destroyCorner.CornerRadius = UDim.new(0, 6)
+	destroyCorner.Parent = destroyButton
+	
+	destroyButton.Activated:Connect(function()
+		print("Destroying UI...")
+		guiState.isDestroyed = true
+		screenGui:Destroy()
+	end)
+	
+	-- Slider label
+	local sliderLabel = Instance.new("TextLabel")
+	sliderLabel.Name = "SliderValue"
+	sliderLabel.Size = UDim2.new(1, -30, 0, 20)
+	sliderLabel.Position = UDim2.new(0, 15, 0, 190)
+	sliderLabel.BackgroundTransparency = 1
+	sliderLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+	sliderLabel.TextSize = 12
+	sliderLabel.Font = Enum.Font.Gotham
+	sliderLabel.Text = "Slider Value: " .. tostring(guiState.sliderValue)
+	sliderLabel.Parent = mainFrame
+	
+	-- Slider
+	local slider = createSlider(UDim2.new(0, 15, 0, 215))
+	slider.Parent = mainFrame
+	
+	print("✓ Example GUI created!")
+	print("✓ Click the red 'Destroy' button to close the GUI")
+	
+	-- Return unmount function
+	return function()
+		if screenGui and screenGui.Parent then
+			screenGui:Destroy()
+		end
+		print("✓ GUI destroyed!")
+	end
+end
+
+-- Initialize
+local unmount = createExampleGUI()
+
+return {
+	unmount = unmount,
+	guiState = guiState
+}
