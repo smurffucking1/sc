@@ -1,0 +1,285 @@
+-- Example GUI using orcab-ui-library
+-- Features: Demonstrates component usage with a destroy button
+
+local UILibrary = require(script.Parent:WaitForChild("orcab-ui-library"))
+local roact = require(script.Parent:WaitForChild("roact"))
+
+-- Get components
+local BrightButton = require(script.Parent:WaitForChild("components"):WaitForChild("BrightButton"))
+local BrightSlider = require(script.Parent:WaitForChild("components"):WaitForChild("BrightSlider"))
+local Border = require(script.Parent:WaitForChild("components"):WaitForChild("Border"))
+local Acrylic = require(script.Parent:WaitForChild("components"):WaitForChild("Acrylic"))
+
+-- Theme configuration
+local theme = {
+	background = Color3.fromRGB(20, 20, 20),
+	button = {
+		background = Color3.fromRGB(45, 45, 45),
+		backgroundHovered = Color3.fromRGB(55, 55, 55),
+		foreground = Color3.fromRGB(255, 255, 255),
+		foregroundAccent = Color3.fromRGB(100, 200, 255),
+		foregroundTransparency = 0.3,
+		backgroundTransparency = 0.1,
+		outlined = true
+	},
+	highlight = {
+		action1 = Color3.fromRGB(100, 200, 255),
+		action2 = Color3.fromRGB(255, 150, 100),
+		destroy = Color3.fromRGB(255, 100, 100)
+	}
+}
+
+-- Main App Component
+local function ExampleApp(props)
+	local sliderValue = roact.useState(50)
+	local uiMounted = roact.useState(true)
+
+	local function onSliderChange(value)
+		sliderValue[2](value)
+		print("Slider value changed to: " .. tostring(value))
+	end
+
+	local function onDestroyUI()
+		print("Destroying UI...")
+		uiMounted[2](false)
+	end
+
+	local function onAction1()
+		print("Action 1 pressed!")
+	end
+
+	local function onAction2()
+		print("Action 2 pressed!")
+	end
+
+	-- Only render if UI is mounted
+	if not uiMounted[1] then
+		return nil
+	end
+
+	return roact.createElement("ScreenGui", {
+		IgnoreGuiInset = true,
+		ResetOnSpawn = false,
+		ZIndexBehavior = "Sibling",
+		DisplayOrder = 10,
+		Name = "ExampleGUI"
+	}, {
+		-- Main background frame
+		MainFrame = roact.createElement("Frame", {
+			Name = "MainFrame",
+			Size = UDim2.new(0, 400, 0, 500),
+			Position = UDim2.new(0.5, -200, 0.5, -250),
+			BackgroundColor3 = theme.background,
+			BackgroundTransparency = 0.2,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0.5, 0.5)
+		}, {
+			-- Title
+			Title = roact.createElement("TextLabel", {
+				Name = "Title",
+				Size = UDim2.new(1, 0, 0, 40),
+				Position = UDim2.new(0, 0, 0, 0),
+				BackgroundTransparency = 1,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				TextSize = 24,
+				Font = Enum.Font.GothamBold,
+				Text = "Example UI"
+			}, {
+				-- UICorner for the title
+				UICorner = roact.createElement("UICorner", {
+					CornerRadius = UDim.new(0, 8)
+				})
+			}),
+
+			-- Spacer
+			Spacer1 = roact.createElement("Frame", {
+				Size = UDim2.new(1, 0, 0, 20),
+				Position = UDim2.new(0, 0, 0, 40),
+				BackgroundTransparency = 1
+			}),
+
+			-- Description
+			Description = roact.createElement("TextLabel", {
+				Name = "Description",
+				Size = UDim2.new(1, -30, 0, 50),
+				Position = UDim2.new(0, 15, 0, 60),
+				BackgroundTransparency = 1,
+				TextColor3 = Color3.fromRGB(200, 200, 200),
+				TextSize = 14,
+				Font = Enum.Font.Gotham,
+				Text = "This example demonstrates the UI Library with buttons and a slider.",
+				TextWrapped = true
+			}),
+
+			-- Action Buttons Container
+			ButtonsContainer = roact.createElement("Frame", {
+				Name = "ButtonsContainer",
+				Size = UDim2.new(1, -30, 0, 70),
+				Position = UDim2.new(0, 15, 0, 110),
+				BackgroundTransparency = 1
+			}, {
+				-- Button 1
+				Button1 = roact.createElement(BrightButton.default, {
+					size = UDim2.new(0, 85, 0, 60),
+					position = UDim2.new(0, 0, 0, 0),
+					radius = 8,
+					color = theme.highlight.action1,
+					borderEnabled = theme.button.outlined,
+					borderColor = theme.button.foreground,
+					transparency = theme.button.backgroundTransparency,
+					onActivate = onAction1,
+					onHover = function(isHovering)
+						if isHovering then
+							print("Hovering over Button 1")
+						end
+					end
+				}, {
+					Label = roact.createElement("TextLabel", {
+						Size = UDim2.new(1, 0, 1, 0),
+						BackgroundTransparency = 1,
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						TextSize = 12,
+						Font = Enum.Font.GothamBold,
+						Text = "Action 1"
+					})
+				}),
+
+				-- Button 2
+				Button2 = roact.createElement(BrightButton.default, {
+					size = UDim2.new(0, 85, 0, 60),
+					position = UDim2.new(0, 100, 0, 0),
+					radius = 8,
+					color = theme.highlight.action2,
+					borderEnabled = theme.button.outlined,
+					borderColor = theme.button.foreground,
+					transparency = theme.button.backgroundTransparency,
+					onActivate = onAction2,
+					onHover = function(isHovering)
+						if isHovering then
+							print("Hovering over Button 2")
+						end
+					end
+				}, {
+					Label = roact.createElement("TextLabel", {
+						Size = UDim2.new(1, 0, 1, 0),
+						BackgroundTransparency = 1,
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						TextSize = 12,
+						Font = Enum.Font.GothamBold,
+						Text = "Action 2"
+					})
+				}),
+
+				-- Destroy Button
+				DestroyButton = roact.createElement(BrightButton.default, {
+					size = UDim2.new(0, 85, 0, 60),
+					position = UDim2.new(0, 200, 0, 0),
+					radius = 8,
+					color = theme.highlight.destroy,
+					borderEnabled = theme.button.outlined,
+					borderColor = Color3.fromRGB(255, 200, 200),
+					transparency = theme.button.backgroundTransparency,
+					onActivate = onDestroyUI,
+					onHover = function(isHovering)
+						if isHovering then
+							print("Hovering over Destroy button")
+						end
+					end
+				}, {
+					Label = roact.createElement("TextLabel", {
+						Size = UDim2.new(1, 0, 1, 0),
+						BackgroundTransparency = 1,
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						TextSize = 12,
+						Font = Enum.Font.GothamBold,
+						Text = "Destroy"
+					})
+				})
+			}),
+
+			-- Slider Section
+			SliderLabel = roact.createElement("TextLabel", {
+				Name = "SliderLabel",
+				Size = UDim2.new(1, -30, 0, 20),
+				Position = UDim2.new(0, 15, 0, 190),
+				BackgroundTransparency = 1,
+				TextColor3 = Color3.fromRGB(200, 200, 200),
+				TextSize = 12,
+				Font = Enum.Font.Gotham,
+				Text = "Slider Value: " .. tostring(math.floor(sliderValue[1] * 100) / 100)
+			}),
+
+			-- Slider
+			Slider = roact.createElement(BrightSlider.default, {
+				size = UDim2.new(1, -30, 0, 40),
+				position = UDim2.new(0, 15, 0, 215),
+				radius = 8,
+				min = 0,
+				max = 100,
+				initialValue = sliderValue[1],
+				color = theme.button.background,
+				accentColor = theme.highlight.action1,
+				borderEnabled = theme.button.outlined,
+				borderColor = theme.button.foreground,
+				transparency = theme.button.backgroundTransparency,
+				indicatorTransparency = 0.2,
+				onValueChanged = onSliderChange,
+				onRelease = function(value)
+					print("Slider released at: " .. tostring(value))
+				end
+			}),
+
+			-- Acrylic Effect (Optional visual element)
+			AcrylicEffect = roact.createElement(Acrylic.default, {
+				radius = 24,
+				distance = 2.5
+			}),
+
+			-- Corner radius
+			UICorner = roact.createElement("UICorner", {
+				CornerRadius = UDim.new(0, 12)
+			}),
+
+			-- Drop shadow effect
+			DropShadow = roact.createElement("UISizeConstraint", {
+				MaxSize = Vector2.new(400, 500)
+			})
+		})
+	})
+end
+
+-- Create and mount the GUI
+local function createExampleGUI()
+	local parent = game:GetService("CoreGui")
+	
+	-- Mount the GUI
+	local handle = roact.mount(
+		roact.createElement(ExampleApp),
+		parent,
+		"ExampleGUI"
+	)
+
+	print("Example GUI created!")
+	
+	-- Return unmount function
+	return function()
+		if handle then
+			roact.unmount(handle)
+			print("Example GUI destroyed!")
+		end
+	end
+end
+
+-- Initialize
+local unmount = createExampleGUI()
+
+-- Cleanup on script disable
+script.AncestryChanged:Connect(function(child, parent)
+	if parent == nil then
+		unmount()
+	end
+end)
+
+return {
+	unmount = unmount
+}
