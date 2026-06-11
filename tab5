@@ -1,4 +1,4 @@
--- MyUILib.lua (library module)
+-- tab5: full UI library
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -78,7 +78,14 @@ local function getOrCreateBlur()
     return blur
 end
 
--- MAIN CREATION FUNCTION (kept from your tab5)
+-- Corner helper
+local function applyCornerRadius(uiCorner, window, scale)
+    scale = scale or 1
+    local r = window.CornerRadius or 10
+    uiCorner.CornerRadius = UDim.new(0, math.floor(r * scale))
+end
+
+-- MAIN CREATION FUNCTION
 function Library:CreateWindow(options)
     options = options or {}
     local selfLib = setmetatable({}, Library)
@@ -140,8 +147,26 @@ function Library:CreateWindow(options)
     rootFrame.BorderSizePixel = 0
     rootFrame.Parent = container
 
+    local thisWindow = setmetatable({
+        Library = selfLib,
+        MainGui = mainGui,
+        BarGui = barGui,
+        Root = rootFrame,
+        Container = container,
+        TabBar = nil,
+        ContentArea = nil,
+        Tabs = {},
+        ActiveTab = nil,
+        Connections = {},
+        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
+        Blur = blur,
+        TabBarAlignment = "Center",
+        TabBarOffset = 0,
+        CornerRadius = 10,
+    }, Window)
+
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    applyCornerRadius(corner, thisWindow)
     corner.Parent = rootFrame
 
     local topBar = Instance.new("Frame")
@@ -196,30 +221,17 @@ function Library:CreateWindow(options)
     contentArea.BorderSizePixel = 0
     contentArea.Size = UDim2.new(1, 0, 1, -32)
     contentArea.Position = UDim2.new(0, 0, 0, 32)
+    contentArea.ZIndex = 1
     contentArea.Parent = rootFrame
 
     local contentCorner = Instance.new("UICorner")
-    contentCorner.CornerRadius = UDim.new(0, 10)
+    applyCornerRadius(contentCorner, thisWindow)
     contentCorner.Parent = contentArea
 
-    local thisWindow = setmetatable({
-        Library = selfLib,
-        MainGui = mainGui,
-        BarGui = barGui,
-        Root = rootFrame,
-        Container = container,
-        TabBar = tabHolder,
-        ContentArea = contentArea,
-        Tabs = {},
-        ActiveTab = nil,
-        Connections = {},
-        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
-        Blur = blur,
-        TabBarAlignment = "Center",
-        TabBarOffset = 0,
-    }, Window)
+    thisWindow.TabBar = tabHolder
+    thisWindow.ContentArea = contentArea
 
-    -- dynamic taskbar tile strip width + alignment
+    -- dynamic dock width + alignment
     local function updateTabHolderSize()
         local total = tabList.AbsoluteContentSize.X
         local padding = 20
@@ -243,6 +255,7 @@ function Library:CreateWindow(options)
         end
     end
 
+    thisWindow.UpdateTabDock = updateTabHolderSize
     tabList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateTabHolderSize)
     updateTabHolderSize()
 
@@ -308,7 +321,7 @@ function Library:CreateWindow(options)
     return thisWindow
 end
 
--- ===== Window methods =====
+-- Window methods
 
 function Window:SetToggleKey(keyCode)
     self.DestroyKey = keyCode
@@ -324,10 +337,29 @@ function Window:SetTabBarAlignment(alignment)
     else
         self.TabBarAlignment = "Center"
     end
+    if self.UpdateTabDock then
+        self.UpdateTabDock()
+    end
 end
 
 function Window:SetTabBarOffset(pixels)
     self.TabBarOffset = tonumber(pixels) or 0
+    if self.UpdateTabDock then
+        self.UpdateTabDock()
+    end
+end
+
+function Window:SetCornerRadius(pixels)
+    self.CornerRadius = math.max(0, tonumber(pixels) or 10)
+    -- update main frames immediately
+    local mainCorner = self.Root:FindFirstChildOfClass("UICorner")
+    if mainCorner then
+        applyCornerRadius(mainCorner, self)
+    end
+    local contentCorner = self.ContentArea:FindFirstChildOfClass("UICorner")
+    if contentCorner then
+        applyCornerRadius(contentCorner, self)
+    end
 end
 
 function Window:Destroy()
@@ -396,7 +428,7 @@ function Window:AddTab(name)
     tabButton.TextColor3 = theme.Text
 
     local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 8)
+    applyCornerRadius(buttonCorner, self, 0.8)
     buttonCorner.Parent = tabButton
 
     local contentFrame = Instance.new("ScrollingFrame")
@@ -408,6 +440,7 @@ function Window:AddTab(name)
     contentFrame.BorderSizePixel = 0
     contentFrame.ScrollBarThickness = 4
     contentFrame.Visible = false
+    contentFrame.ZIndex = 1
 
     local list = Instance.new("UIListLayout")
     list.FillDirection = Enum.FillDirection.Vertical
@@ -437,7 +470,7 @@ function Window:AddTab(name)
     return tabObj
 end
 
--- ===== Tab element methods =====
+-- Tab element methods
 
 function Tab:AddLabel(text)
     local theme = self.Window.Library.Theme
@@ -473,7 +506,7 @@ function Tab:AddButton(text, callback)
     button.Text = text
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
+    applyCornerRadius(corner, self.Window, 0.8)
     corner.Parent = button
 
     table.insert(self.Window.Connections,
@@ -518,7 +551,7 @@ function Tab:AddToggle(text, default, callback)
     box.Text = ""
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
+    applyCornerRadius(corner, self.Window, 0.6)
     corner.Parent = box
 
     local state = default and true or false
@@ -585,7 +618,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     bar.Size = UDim2.new(1, 0, 0, 6)
 
     local barCorner = Instance.new("UICorner")
-    barCorner.CornerRadius = UDim.new(0, 3)
+    applyCornerRadius(barCorner, self.Window, 0.3)
     barCorner.Parent = bar
 
     local fill = Instance.new("Frame")
@@ -596,7 +629,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     fill.Size = UDim2.new(0, 0, 1, 0)
 
     local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 3)
+    applyCornerRadius(fillCorner, self.Window, 0.3)
     fillCorner.Parent = fill
 
     local knob = Instance.new("Frame")
@@ -609,7 +642,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     knob.Position = UDim2.new(0, 0, 0.5, 0)
 
     local knobCorner = Instance.new("UICorner")
-    knobCorner.CornerRadius = UDim.new(1, 0)
+    applyCornerRadius(knobCorner, self.Window, 1)
     knobCorner.Parent = knob
 
     local dragging = false
@@ -708,7 +741,7 @@ function Tab:AddKeybind(text, initialKey, callback)
     button.TextColor3 = theme.Text
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
+    applyCornerRadius(corner, self.Window, 0.6)
     corner.Parent = button
 
     local currentKey = initialKey
@@ -799,7 +832,7 @@ function Tab:AddDropdown(text, items, default, callback)
     button.Text = tostring(default or "Select")
 
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
+    applyCornerRadius(btnCorner, self.Window, 0.6)
     btnCorner.Parent = button
 
     local menu = Instance.new("Frame")
@@ -814,14 +847,14 @@ function Tab:AddDropdown(text, items, default, callback)
     menu.ZIndex = 50
 
     local menuCorner = Instance.new("UICorner")
-    menuCorner.CornerRadius = UDim.new(0, 6)
-    menuCorner.Parent = menu          -- no menuCorner.ZIndex
+    applyCornerRadius(menuCorner, self.Window, 0.6)
+    menuCorner.Parent = menu
 
-local list = Instance.new("UIListLayout")
-list.FillDirection = Enum.FillDirection.Vertical
-list.SortOrder = Enum.SortOrder.LayoutOrder
-list.Padding = UDim.new(0, 2)
-list.Parent = menu
+    local list = Instance.new("UIListLayout")
+    list.FillDirection = Enum.FillDirection.Vertical
+    list.SortOrder = Enum.SortOrder.LayoutOrder
+    list.Padding = UDim2.new(0, 2)
+    list.Parent = menu
 
     local opened = false
     local currentValue = default
@@ -848,8 +881,8 @@ list.Parent = menu
             opt.ZIndex = 51
 
             local c = Instance.new("UICorner")
-            c.CornerRadius = UDim.new(0, 4)
-            c.Parent = opt              -- no c.ZIndex
+            applyCornerRadius(c, self.Window, 0.5)
+            c.Parent = opt
 
             table.insert(self.Window.Connections,
                 opt.MouseButton1Click:Connect(function()
