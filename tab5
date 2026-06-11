@@ -108,6 +108,19 @@ function Library:CreateWindow(options)
     barGui.DisplayOrder = 9999
     barGui.Parent = playerGui
 
+-- full-screen input blocker to prevent click-through
+local blocker = Instance.new("TextButton")
+blocker.Name = "InputBlocker"
+blocker.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+blocker.BackgroundTransparency = 1           -- fully invisible
+blocker.BorderSizePixel = 0
+blocker.Size = UDim2.new(1, 0, 1, 0)
+blocker.Position = UDim2.new(0, 0, 0, 0)
+blocker.Text = ""
+blocker.AutoButtonColor = false
+blocker.Modal = true                          -- consumes input for this ScreenGui
+blocker.Parent = mainGui, barGui
+
     -- MAIN WINDOW CONTAINER
     local container = Instance.new("Frame")
     container.Name = "MainContainer"
