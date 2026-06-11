@@ -1,4 +1,5 @@
 -- MyUILib.lua
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
@@ -46,15 +47,21 @@ function Library:GetThemes()
 end
 
 function Library:SetTheme(name)
-    if not self.Themes[name] then return end
+    if not self.Themes[name] then
+        return
+    end
     self.Theme = self.Themes[name]
     self.Theme.Name = name
-    -- TODO: propagate theme to all open windows & elements
+    -- Theme propagation can be added later
 end
 
 -- Window object
 local Window = {}
 Window.__index = Window
+
+-- Tab object
+local Tab = {}
+Tab.__index = Tab
 
 function Library:CreateWindow(options)
     options = options or {}
@@ -153,7 +160,9 @@ function Library:CreateWindow(options)
     -- keybind to toggle visibility
     table.insert(thisWindow.Connections,
         UserInputService.InputBegan:Connect(function(input, gp)
-            if gp then return end
+            if gp then
+                return
+            end
             if input.KeyCode == thisWindow.DestroyKey then
                 thisWindow.Gui.Enabled = not thisWindow.Gui.Enabled
             end
@@ -162,3 +171,318 @@ function Library:CreateWindow(options)
 
     return thisWindow
 end
+
+-- Window methods
+
+function Window:SetToggleKey(keyCode)
+    self.DestroyKey = keyCode
+end
+
+function Window:Destroy()
+    for _, conn in ipairs(self.Connections) do
+        if conn.Connected then
+            conn:Disconnect()
+        end
+    end
+    table.clear(self.Connections)
+
+    if self.Gui and self.Gui.Parent then
+        self.Gui:Destroy()
+    end
+end
+
+function Window:ShowTab(tab)
+    local theme = self.Library.Theme
+    if self.ActiveTab == tab then
+        return
+    end
+
+    for _, t in pairs(self.Tabs) do
+        t.Content.Visible = false
+        t.Button.BackgroundColor3 = theme.TabInactive
+        t.Button.TextColor3 = theme.SubText
+    end
+
+    tab.Content.Visible = true
+    tab.Button.BackgroundColor3 = theme.TabActive
+    tab.Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.ActiveTab = tab
+end
+
+function Window:AddTab(name)
+    local theme = self.Library.Theme
+
+    local tabButton = Instance.new("TextButton")
+    tabButton.Name = name .. "_TabButton"
+    tabButton.Parent = self.TabBar
+    tabButton.Size = UDim2.new(1, 0, 0, 28)
+    tabButton.BackgroundColor3 = theme.TabInactive
+    tabButton.BorderSizePixel = 0
+    tabButton.AutoButtonColor = false
+    tabButton.Font = Enum.Font.Gotham
+    tabButton.TextSize = 14
+    tabButton.Text = name
+    tabButton.TextColor3 = theme.Text
+
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 6)
+    buttonCorner.Parent = tabButton
+
+    local contentFrame = Instance.new("ScrollingFrame")
+    contentFrame.Name = name .. "_Content"
+    contentFrame.Parent = self.ContentArea
+    contentFrame.Size = UDim2.new(1, -10, 1, -10)
+    contentFrame.Position = UDim2.new(0, 5, 0, 5)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.BorderSizePixel = 0
+    contentFrame.ScrollBarThickness = 4
+    contentFrame.Visible = false
+
+    local list = Instance.new("UIListLayout")
+    list.FillDirection = Enum.FillDirection.Vertical
+    list.SortOrder = Enum.SortOrder.LayoutOrder
+    list.Padding = UDim.new(0, 4)
+    list.Parent = contentFrame
+
+    local tabObj = setmetatable({
+        Window = self,
+        Name = name,
+        Button = tabButton,
+        Content = contentFrame,
+    }, Tab)
+
+    table.insert(self.Connections,
+        tabButton.MouseButton1Click:Connect(function()
+            self:ShowTab(tabObj)
+        end)
+    )
+
+    self.Tabs[name] = tabObj
+
+    if not self.ActiveTab then
+        self:ShowTab(tabObj)
+    end
+
+    return tabObj
+end
+
+-- Tab element helpers
+
+function Tab:AddLabel(text)
+    local theme = self.Window.Library.Theme
+
+    local label = Instance.new("TextLabel")
+    label.Name = "Label"
+    label.Parent = self.Content
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, -10, 0, 24)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextColor3 = theme.Text
+    label.Text = text
+
+    return label
+end
+
+function Tab:AddButton(text, callback)
+    callback = callback or function() end
+    local theme = self.Window.Library.Theme
+
+    local button = Instance.new("TextButton")
+    button.Name = "Button"
+    button.Parent = self.Content
+    button.Size = UDim2.new(1, -10, 0, 28)
+    button.BackgroundColor3 = theme.Accent2
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = true
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 14
+    button.TextColor3 = theme.Text
+    button.Text = text
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = button
+
+    table.insert(self.Window.Connections,
+        button.MouseButton1Click:Connect(function()
+            task.spawn(callback)
+        end)
+    )
+
+    return button
+end
+
+function Tab:AddToggle(text, default, callback)
+    callback = callback or function() end
+    local theme = self.Window.Library.Theme
+
+    local holder = Instance.new("Frame")
+    holder.Name = "Toggle"
+    holder.Parent = self.Content
+    holder.Size = UDim2.new(1, -10, 0, 28)
+    holder.BackgroundTransparency = 1
+
+    local label = Instance.new("TextLabel")
+    label.Name = "Label"
+    label.Parent = holder
+    label.BackgroundTransparency = 1
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.Size = UDim2.new(1, -40, 1, 0)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextColor3 = theme.Text
+    label.Text = text
+
+    local box = Instance.new("TextButton")
+    box.Name = "Box"
+    box.Parent = holder
+    box.Size = UDim2.new(0, 24, 0, 24)
+    box.Position = UDim2.new(1, -26, 0.5, -12)
+    box.BackgroundColor3 = theme.Accent2
+    box.BorderSizePixel = 0
+    box.AutoButtonColor = false
+    box.Text = ""
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = box
+
+    local state = default and true or false
+
+    local function update()
+        box.BackgroundColor3 = state and theme.Accent or theme.Accent2
+    end
+
+    update()
+    callback(state)
+
+    table.insert(self.Window.Connections,
+        box.MouseButton1Click:Connect(function()
+            state = not state
+            update()
+            task.spawn(callback, state)
+        end)
+    )
+
+    return {
+        Set = function(_, v)
+            state = v and true or false
+            update()
+            callback(state)
+        end,
+        Get = function()
+            return state
+        end,
+    }
+end
+
+-- Simple Keybind element (for Settings)
+function Tab:AddKeybind(text, initialKey, callback)
+    callback = callback or function() end
+    local theme = self.Window.Library.Theme
+
+    local holder = Instance.new("Frame")
+    holder.Name = "Keybind"
+    holder.Parent = self.Content
+    holder.Size = UDim2.new(1, -10, 0, 28)
+    holder.BackgroundTransparency = 1
+
+    local label = Instance.new("TextLabel")
+    label.Name = "Label"
+    label.Parent = holder
+    label.BackgroundTransparency = 1
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.Size = UDim2.new(1, -80, 1, 0)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextColor3 = theme.Text
+    label.Text = text
+
+    local button = Instance.new("TextButton")
+    button.Name = "KeyButton"
+    button.Parent = holder
+    button.Size = UDim2.new(0, 60, 0, 24)
+    button.Position = UDim2.new(1, -62, 0.5, -12)
+    button.BackgroundColor3 = theme.Accent2
+    button.BorderSizePixel = 0
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 12
+    button.TextColor3 = theme.Text
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = button
+
+    local currentKey = initialKey or Enum.KeyCode.RightShift
+    button.Text = currentKey.Name
+
+    local listening = false
+
+    local function setKey(keyCode)
+        currentKey = keyCode
+        button.Text = currentKey.Name
+        callback(currentKey)
+    end
+
+    table.insert(self.Window.Connections,
+        button.MouseButton1Click:Connect(function()
+            if listening then
+                return
+            end
+            listening = true
+            button.Text = "..."
+            local conn
+            conn = UserInputService.InputBegan:Connect(function(input, gp)
+                if gp then
+                    return
+                end
+                if input.KeyCode ~= Enum.KeyCode.Unknown then
+                    setKey(input.KeyCode)
+                    listening = false
+                    if conn and conn.Connected then
+                        conn:Disconnect()
+                    end
+                end
+            end)
+        end)
+    )
+
+    return {
+        Get = function()
+            return currentKey
+        end,
+        Set = function(_, keyCode)
+            setKey(keyCode)
+        end,
+    }
+end
+
+-- Placeholder Dropdown (non-functional yet, but avoids errors)
+function Tab:AddDropdown(text, items, default, callback)
+    callback = callback or function() end
+    local theme = self.Window.Library.Theme
+
+    local label = Instance.new("TextLabel")
+    label.Name = "DropdownLabel"
+    label.Parent = self.Content
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, -10, 0, 24)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextColor3 = theme.Text
+    label.Text = text .. " (dropdown stub)"
+
+    callback(default)
+
+    return {
+        Set = function(_, value)
+            callback(value)
+        end,
+    }
+end
+
+return Library
