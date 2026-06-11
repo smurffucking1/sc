@@ -588,12 +588,29 @@ function Tab:AddSlider(text, min, max, default, callback)
     label.Parent = holder
     label.BackgroundTransparency = 1
     label.Position = UDim2.new(0, 0, 0, 0)
-    label.Size = UDim2.new(1, 0, 0.5, 0)
+    label.Size = UDim2.new(1, -60, 0.5, 0)
     label.Font = Enum.Font.Gotham
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.TextColor3 = theme.Text
     label.Text = string.format("%s: %d", text, default)
+
+    local valueBox = Instance.new("TextBox")
+    valueBox.Name = "ValueBox"
+    valueBox.Parent = holder
+    valueBox.Size = UDim2.new(0, 50, 0, 20)
+    valueBox.Position = UDim2.new(1, -52, 0, 2)
+    valueBox.BackgroundColor3 = theme.Accent2
+    valueBox.BorderSizePixel = 0
+    valueBox.Font = Enum.Font.Gotham
+    valueBox.TextSize = 14
+    valueBox.TextColor3 = theme.Text
+    valueBox.Text = tostring(default)
+    valueBox.ClearTextOnFocus = false
+
+    local vbCorner = Instance.new("UICorner")
+    vbCorner.CornerRadius = UDim.new(0, 4)
+    vbCorner.Parent = valueBox
 
     local bar = Instance.new("Frame")
     bar.Name = "Bar"
@@ -634,16 +651,23 @@ function Tab:AddSlider(text, min, max, default, callback)
     local dragging = false
     local currentValue = default
 
+    local function applyValue(v)
+        v = math.clamp(v, min, max)
+        local a = (v - min) / (max - min)
+        currentValue = v
+        fill.Size = UDim2.new(a, 0, 1, 0)
+        knob.Position = UDim2.new(a, 0, 0.5, 0)
+        label.Text = string.format("%s: %d", text, v)
+        valueBox.Text = tostring(v)
+        callback(v)
+    end
+
     local function setFromX(x)
         local absPos = bar.AbsolutePosition.X
         local absSize = bar.AbsoluteSize.X
         local alpha = math.clamp((x - absPos) / absSize, 0, 1)
         local value = math.floor(min + (max - min) * alpha + 0.5)
-        currentValue = value
-        fill.Size = UDim2.new(alpha, 0, 1, 0)
-        knob.Position = UDim2.new(alpha, 0, 0.5, 0)
-        label.Text = string.format("%s: %d", text, value)
-        callback(value)
+        applyValue(value)
     end
 
     local uis = UserInputService
@@ -673,19 +697,22 @@ function Tab:AddSlider(text, min, max, default, callback)
         end)
     )
 
-    local alpha0 = (default - min) / (max - min)
-    fill.Size = UDim2.new(alpha0, 0, 1, 0)
-    knob.Position = UDim2.new(alpha0, 0, 0.5, 0)
+    valueBox.FocusLost:Connect(function(enterPressed)
+        if not enterPressed then return end
+        local num = tonumber(valueBox.Text)
+        if not num then
+            valueBox.Text = tostring(currentValue)
+            return
+        end
+        applyValue(num)
+    end)
+
+    -- initial
+    applyValue(default)
 
     return {
         Set = function(_, v)
-            v = math.clamp(v, min, max)
-            local a = (v - min) / (max - min)
-            currentValue = v
-            fill.Size = UDim2.new(a, 0, 1, 0)
-            knob.Position = UDim2.new(a, 0, 0.5, 0)
-            label.Text = string.format("%s: %d", text, v)
-            callback(v)
+            applyValue(v)
         end,
         Get = function()
             return currentValue
@@ -839,12 +866,19 @@ function Tab:AddDropdown(text, items, default, callback)
     local holder = Instance.new("Frame")
     holder.Name = "Dropdown"
     holder.Parent = self.Content
-    holder.Size = UDim2.new(1, -10, 0, 32) -- will resize when open
+    holder.Size = UDim2.new(1, -10, 0, 32) -- base; will grow
     holder.BackgroundTransparency = 1
+
+    local header = Instance.new("Frame")
+    header.Name = "Header"
+    header.Parent = holder
+    header.BackgroundTransparency = 1
+    header.Size = UDim2.new(1, 0, 0, 32)
+    header.Position = UDim2.new(0, 0, 0, 0)
 
     local label = Instance.new("TextLabel")
     label.Name = "Label"
-    label.Parent = holder
+    label.Parent = header
     label.BackgroundTransparency = 1
     label.Position = UDim2.new(0, 0, 0, 0)
     label.Size = UDim2.new(0.5, 0, 1, 0)
@@ -856,7 +890,7 @@ function Tab:AddDropdown(text, items, default, callback)
 
     local button = Instance.new("TextButton")
     button.Name = "MainButton"
-    button.Parent = holder
+    button.Parent = header
     button.Size = UDim2.new(0.5, -4, 1, 0)
     button.Position = UDim2.new(0.5, 4, 0, 0)
     button.BackgroundColor3 = theme.Accent2
@@ -876,7 +910,7 @@ function Tab:AddDropdown(text, items, default, callback)
     menu.Parent = holder
     menu.BackgroundColor3 = theme.Background
     menu.BorderSizePixel = 0
-    menu.Position = UDim2.new(0.5, 4, 1, 2) -- inside holder, under button
+    menu.Position = UDim2.new(0.5, 4, 0, 32 + 2) -- under header
     menu.Size = UDim2.new(0.5, -4, 0, 0)
     menu.Visible = false
     menu.ClipsDescendants = true
@@ -895,7 +929,6 @@ function Tab:AddDropdown(text, items, default, callback)
     local opened = false
     local currentValue = default
     local baseHeight = 32
-
     local searchBox
 
     local function updateHolderHeight()
@@ -916,7 +949,6 @@ function Tab:AddDropdown(text, items, default, callback)
             end
         end
 
-        -- Search box
         searchBox = Instance.new("TextBox")
         searchBox.Name = "Search"
         searchBox.Parent = menu
@@ -976,7 +1008,6 @@ function Tab:AddDropdown(text, items, default, callback)
             end
         end
 
-        -- 24 search + 4 padding + options
         local h = 24 + 4 + visibleCount * 26 + 4
         menu.Size = UDim2.new(menu.Size.X.Scale, menu.Size.X.Offset, 0, h)
         updateHolderHeight()
