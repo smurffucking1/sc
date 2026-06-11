@@ -1,8 +1,9 @@
--- MyUILib.lua
+-- MyUILib.lua (updated with blur, top layer, tile taskbar, animations)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 
 local Library = {}
 Library.__index = Library
@@ -53,7 +54,6 @@ function Library:SetTheme(name)
     end
     self.Theme = self.Themes[name]
     self.Theme.Name = name
-    -- optionally also expose on the root Library
     Library.Theme = self.Theme
 end
 
@@ -65,6 +65,18 @@ Window.__index = Window
 local Tab = {}
 Tab.__index = Tab
 
+-- Helper: ensure a BlurEffect exists
+local function getOrCreateBlur()
+    local blur = Lighting:FindFirstChildOfClass("BlurEffect")
+    if not blur then
+        blur = Instance.new("BlurEffect")
+        blur.Size = 0
+        blur.Enabled = false
+        blur.Parent = Lighting
+    end
+    return blur
+end
+
 function Library:CreateWindow(options)
     options = options or {}
     local selfLib = setmetatable({}, Library)
@@ -75,12 +87,15 @@ function Library:CreateWindow(options)
     local themeName = options.DefaultTheme or "Dark"
     selfLib:SetTheme(themeName)
 
+    local blur = getOrCreateBlur()
+
     -- MAIN WINDOW GUI
     local mainGui = Instance.new("ScreenGui")
     mainGui.Name = (options.Title or "MyUILib") .. "_Main"
     mainGui.IgnoreGuiInset = true
     mainGui.ResetOnSpawn = false
     mainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    mainGui.DisplayOrder = 9999          -- on top of other UI
     mainGui.Parent = playerGui
 
     -- TASKBAR GUI
@@ -89,6 +104,7 @@ function Library:CreateWindow(options)
     barGui.IgnoreGuiInset = true
     barGui.ResetOnSpawn = false
     barGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    barGui.DisplayOrder = 9999           -- same top layer
     barGui.Parent = playerGui
 
     -- MAIN WINDOW CONTAINER (for animation)
@@ -133,27 +149,27 @@ function Library:CreateWindow(options)
         .. (options.SubTitle and (" - " .. options.SubTitle) or "")
     titleLabel.Parent = topBar
 
-    -- TASKBAR (BOTTOM) – tile strip like Windows
+    -- TASKBAR (BOTTOM) – tile strip like Windows, buttons centered
     local tabBar = Instance.new("Frame")
     tabBar.Name = "TabBar"
     tabBar.BackgroundColor3 = selfLib.Theme.Background
     tabBar.BorderSizePixel = 0
-    tabBar.Size = UDim2.new(1, 0, 0, 56)              -- taskbar height
-    tabBar.Position = UDim2.new(0, 0, 1, -56)         -- bottom of screen
+    tabBar.Size = UDim2.new(1, 0, 0, 56)
+    tabBar.Position = UDim2.new(0, 0, 1, -56)
     tabBar.Parent = barGui
 
     local tabHolder = Instance.new("Frame")
     tabHolder.Name = "TabHolder"
     tabHolder.BackgroundTransparency = 1
-    tabHolder.Size = UDim2.new(0, 420, 1, -8)        -- fixed strip width
-    tabHolder.Position = UDim2.new(0, 10, 0, 4)      -- left side of bar
+    tabHolder.Size = UDim2.new(0, 420, 1, -8)
+    tabHolder.Position = UDim2.new(0.5, -210, 0, 4)   -- centered
     tabHolder.Parent = tabBar
 
     local tabList = Instance.new("UIListLayout")
     tabList.FillDirection = Enum.FillDirection.Horizontal
     tabList.SortOrder = Enum.SortOrder.LayoutOrder
     tabList.Padding = UDim.new(0, 6)
-    tabList.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    tabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
     tabList.VerticalAlignment = Enum.VerticalAlignment.Center
     tabList.Parent = tabHolder
 
@@ -182,9 +198,10 @@ function Library:CreateWindow(options)
         ActiveTab = nil,
         Connections = {},
         DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
+        Blur = blur,
     }, Window)
 
-    -- keybind to toggle visibility of both main and bar
+    -- keybind to toggle visibility of both main and bar + blur
     table.insert(thisWindow.Connections,
         UserInputService.InputBegan:Connect(function(input, gp)
             if gp then
@@ -194,26 +211,52 @@ function Library:CreateWindow(options)
                 local newState = not thisWindow.MainGui.Enabled
                 thisWindow.MainGui.Enabled = newState
                 thisWindow.BarGui.Enabled = newState
+                thisWindow.Blur.Enabled = newState
+                thisWindow.Blur.Size = newState and 18 or 0
             end
         end)
     )
 
-    -- simple popup animation (Windows-like)
-    container.Visible = true
-    container.Size = UDim2.new(0, 460, 0, 294)
-    container.Position = UDim2.new(0.5, -230, 0.5, -147)
+    -- slide-in animation from closest edge (main window)
+    do
+        local tweenInfo = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local currentPos = container.Position
+        local fromPos
 
-    local tweenInfo = TweenInfo.new(
-        0.18,
-        Enum.EasingStyle.Quad,
-        Enum.EasingDirection.Out
-    )
+        -- base on horizontal center: left edge or right edge
+        if currentPos.X.Scale <= 0.5 then
+            -- slide in from left
+            fromPos = UDim2.new(-0.2, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset)
+        else
+            -- slide in from right
+            fromPos = UDim2.new(1.2, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset)
+        end
 
-    local tween = TweenService:Create(container, tweenInfo, {
-        Size = UDim2.new(0, 500, 0, 320),
-        Position = UDim2.new(0.5, -250, 0.5, -160),
-    })
-    tween:Play()
+        container.Position = fromPos
+
+        local tween = TweenService:Create(container, tweenInfo, {
+            Position = currentPos,
+        })
+        tween:Play()
+    end
+
+    -- slide-up animation for taskbar
+    do
+        local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local startPos = UDim2.new(0, 0, 1, 0)     -- just below screen
+        local endPos = UDim2.new(0, 0, 1, -56)
+
+        tabBar.Position = startPos
+
+        local tween = TweenService:Create(tabBar, tweenInfo, {
+            Position = endPos,
+        })
+        tween:Play()
+    end
+
+    -- enable blur on open
+    thisWindow.Blur.Enabled = true
+    thisWindow.Blur.Size = 18
 
     return thisWindow
 end
@@ -238,6 +281,10 @@ function Window:Destroy()
     if self.BarGui and self.BarGui.Parent then
         self.BarGui:Destroy()
     end
+    if self.Blur then
+        self.Blur.Enabled = false
+        self.Blur.Size = 0
+    end
 end
 
 function Window:ShowTab(tab)
@@ -258,26 +305,34 @@ function Window:ShowTab(tab)
     self.ActiveTab = tab
 end
 
+local function getInitials(name)
+    name = tostring(name or "")
+    if #name == 0 then
+        return "?"
+    end
+    -- for now just first letter; later can extend to 2-letter initials
+    return string.upper(string.sub(name, 1, 1))
+end
+
 function Window:AddTab(name)
     local theme = self.Library.Theme
 
-    -- tile-style tab button in bottom taskbar
+    -- square tile button, centered in bar, using initials
     local tabButton = Instance.new("TextButton")
     tabButton.Name = name .. "_TabButton"
     tabButton.Parent = self.TabBar
-    tabButton.Size = UDim2.new(0, 90, 0, 40)        -- tile size
+    tabButton.Size = UDim2.new(0, 40, 0, 40)      -- square tile
     tabButton.BackgroundColor3 = theme.TabInactive
     tabButton.BorderSizePixel = 0
     tabButton.AutoButtonColor = true
     tabButton.Font = Enum.Font.GothamBold
-    tabButton.TextSize = 13
-    tabButton.TextWrapped = true
-    tabButton.TextTruncate = Enum.TextTruncate.AtEnd
-    tabButton.Text = name
+    tabButton.TextSize = 16
+    tabButton.TextWrapped = false
+    tabButton.Text = getInitials(name)
     tabButton.TextColor3 = theme.Text
 
     local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 6)
+    buttonCorner.CornerRadius = UDim.new(0, 8)
     buttonCorner.Parent = tabButton
 
     local contentFrame = Instance.new("ScrollingFrame")
@@ -431,7 +486,7 @@ function Tab:AddToggle(text, default, callback)
     }
 end
 
--- Simple Keybind element (for Settings) with safety
+-- Keybind element
 function Tab:AddKeybind(text, initialKey, callback)
     callback = callback or function() end
     local theme = self.Window.Library.Theme
@@ -519,7 +574,7 @@ function Tab:AddKeybind(text, initialKey, callback)
     }
 end
 
--- Placeholder Dropdown (non-functional yet, but avoids errors)
+-- Placeholder Dropdown
 function Tab:AddDropdown(text, items, default, callback)
     callback = callback or function() end
     local theme = self.Window.Library.Theme
