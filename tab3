@@ -1,4 +1,4 @@
--- MyUILib.lua (library module)
+-- MyUILib.lua (full updated library)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -218,6 +218,7 @@ function Library:CreateWindow(options)
         Blur = blur,
         TabBarAlignment = "Center",
         TabBarOffset = 0,
+        Padding = 10,
     }, Window)
 
     -- dynamic taskbar tile strip width + alignment
@@ -227,7 +228,8 @@ function Library:CreateWindow(options)
         local width = math.max(total + padding, 120)
 
         tabBar.Size = UDim2.new(0, width, 0, 56)
-        tabHolder.Size = UDim2.new(1, -10, 1, -8)
+        tabHolder.Size = UDim2.new(1, -thisWindow.Padding, 1, -8)
+        tabHolder.Position = UDim2.new(0, thisWindow.Padding / 2, 0, 4)
 
         local align = thisWindow.TabBarAlignment
         local offset = thisWindow.TabBarOffset
@@ -310,7 +312,7 @@ function Library:CreateWindow(options)
     return thisWindow
 end
 
--- ===== Window methods =====
+-- Window methods
 
 function Window:SetToggleKey(keyCode)
     self.DestroyKey = keyCode
@@ -333,6 +335,13 @@ end
 
 function Window:SetTabBarOffset(pixels)
     self.TabBarOffset = tonumber(pixels) or 0
+    if self.UpdateTabDock then
+        self.UpdateTabDock()
+    end
+end
+
+function Window:SetPadding(pixels)
+    self.Padding = math.max(0, tonumber(pixels) or 10)
     if self.UpdateTabDock then
         self.UpdateTabDock()
     end
@@ -390,6 +399,7 @@ end
 
 function Window:AddTab(name)
     local theme = self.Library.Theme
+    local pad = self.Padding
 
     local tabButton = Instance.new("TextButton")
     tabButton.Name = name .. "_TabButton"
@@ -410,8 +420,8 @@ function Window:AddTab(name)
     local contentFrame = Instance.new("ScrollingFrame")
     contentFrame.Name = name .. "_Content"
     contentFrame.Parent = self.ContentArea
-    contentFrame.Size = UDim2.new(1, -10, 1, -10)
-    contentFrame.Position = UDim2.new(0, 5, 0, 5)
+    contentFrame.Size = UDim2.new(1, -pad, 1, -pad)
+    contentFrame.Position = UDim2.new(0, pad / 2, 0, pad / 2)
     contentFrame.BackgroundTransparency = 1
     contentFrame.BorderSizePixel = 0
     contentFrame.ScrollBarThickness = 4
@@ -446,7 +456,7 @@ function Window:AddTab(name)
     return tabObj
 end
 
--- ===== Tab element methods =====
+-- Tab element methods
 
 function Tab:AddLabel(text)
     local theme = self.Window.Library.Theme
@@ -770,6 +780,56 @@ function Tab:AddKeybind(text, initialKey, callback)
     }
 end
 
+-- TextBox element for settings / custom values
+function Tab:AddTextBox(labelText, placeholder, defaultText, onSubmit)
+    onSubmit = onSubmit or function() end
+    local theme = self.Window.Library.Theme
+
+    local holder = Instance.new("Frame")
+    holder.Name = "TextBox"
+    holder.Parent = self.Content
+    holder.Size = UDim2.new(1, -10, 0, 28)
+    holder.BackgroundTransparency = 1
+
+    local label = Instance.new("TextLabel")
+    label.Name = "Label"
+    label.Parent = holder
+    label.BackgroundTransparency = 1
+    label.Position = UDim2.new(0, 0, 0, 0)
+    label.Size = UDim2.new(0.5, 0, 1, 0)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextColor3 = theme.Text
+    label.Text = labelText
+
+    local box = Instance.new("TextBox")
+    box.Name = "Input"
+    box.Parent = holder
+    box.Size = UDim2.new(0.5, -4, 1, 0)
+    box.Position = UDim2.new(0.5, 4, 0, 0)
+    box.BackgroundColor3 = theme.Accent2
+    box.BorderSizePixel = 0
+    box.Font = Enum.Font.Gotham
+    box.TextSize = 14
+    box.TextColor3 = theme.Text
+    box.PlaceholderText = placeholder or ""
+    box.Text = defaultText or ""
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = box
+
+    box.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            onSubmit(box.Text)
+        end
+    end)
+
+    return box
+end
+
+-- Dropdown with push-down behavior + simple search
 function Tab:AddDropdown(text, items, default, callback)
     callback = callback or function() end
     items = items or {}
@@ -779,7 +839,7 @@ function Tab:AddDropdown(text, items, default, callback)
     local holder = Instance.new("Frame")
     holder.Name = "Dropdown"
     holder.Parent = self.Content
-    holder.Size = UDim2.new(1, -10, 0, 32)
+    holder.Size = UDim2.new(1, -10, 0, 32) -- will resize when open
     holder.BackgroundTransparency = 1
 
     local label = Instance.new("TextLabel")
@@ -816,7 +876,7 @@ function Tab:AddDropdown(text, items, default, callback)
     menu.Parent = holder
     menu.BackgroundColor3 = theme.Background
     menu.BorderSizePixel = 0
-    menu.Position = UDim2.new(0.5, 4, 1, 2)
+    menu.Position = UDim2.new(0.5, 4, 1, 2) -- inside holder, under button
     menu.Size = UDim2.new(0.5, -4, 0, 0)
     menu.Visible = false
     menu.ClipsDescendants = true
@@ -829,20 +889,55 @@ function Tab:AddDropdown(text, items, default, callback)
     local list = Instance.new("UIListLayout")
     list.FillDirection = Enum.FillDirection.Vertical
     list.SortOrder = Enum.SortOrder.LayoutOrder
-    list.Padding = UDim.new(0, 2) -- UDim, not UDim2
+    list.Padding = UDim.new(0, 2)
     list.Parent = menu
 
     local opened = false
     local currentValue = default
+    local baseHeight = 32
 
-    local function rebuildMenu()
+    local searchBox
+
+    local function updateHolderHeight()
+        if opened then
+            holder.Size = UDim2.new(1, -10, 0, baseHeight + menu.Size.Y.Offset + 4)
+        else
+            holder.Size = UDim2.new(1, -10, 0, baseHeight)
+        end
+    end
+
+    local function rebuildMenu(filterText)
+        filterText = filterText or ""
+        filterText = string.lower(filterText)
+
         for _, child in ipairs(menu:GetChildren()) do
-            if child:IsA("TextButton") then
+            if child:IsA("TextButton") or child:IsA("TextBox") then
                 child:Destroy()
             end
         end
 
-        for _, v in ipairs(items) do
+        -- Search box
+        searchBox = Instance.new("TextBox")
+        searchBox.Name = "Search"
+        searchBox.Parent = menu
+        searchBox.BackgroundColor3 = theme.Accent2
+        searchBox.BorderSizePixel = 0
+        searchBox.Size = UDim2.new(1, -4, 0, 24)
+        searchBox.Position = UDim2.new(0, 2, 0, 2)
+        searchBox.Font = Enum.Font.Gotham
+        searchBox.TextSize = 14
+        searchBox.TextColor3 = theme.Text
+        searchBox.PlaceholderText = "Search..."
+        searchBox.Text = filterText or ""
+        searchBox.ZIndex = 51
+
+        local searchCorner = Instance.new("UICorner")
+        searchCorner.CornerRadius = UDim.new(0, 4)
+        searchCorner.Parent = searchBox
+
+        local visibleCount = 0
+
+        local function addOption(v)
             local opt = Instance.new("TextButton")
             opt.Name = "Option"
             opt.Parent = menu
@@ -860,6 +955,8 @@ function Tab:AddDropdown(text, items, default, callback)
             c.CornerRadius = UDim.new(0, 4)
             c.Parent = opt
 
+            visibleCount += 1
+
             table.insert(self.Window.Connections,
                 opt.MouseButton1Click:Connect(function()
                     currentValue = v
@@ -867,21 +964,38 @@ function Tab:AddDropdown(text, items, default, callback)
                     callback(v)
                     opened = false
                     menu.Visible = false
+                    updateHolderHeight()
                 end)
             )
         end
 
-        local count = #items
-        local h = count > 0 and (count * 26 + 4) or 0
+        for _, v in ipairs(items) do
+            local s = tostring(v)
+            if filterText == "" or string.find(string.lower(s), filterText, 1, true) then
+                addOption(v)
+            end
+        end
+
+        -- 24 search + 4 padding + options
+        local h = 24 + 4 + visibleCount * 26 + 4
         menu.Size = UDim2.new(menu.Size.X.Scale, menu.Size.X.Offset, 0, h)
+        updateHolderHeight()
+
+        searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+            rebuildMenu(searchBox.Text)
+        end)
     end
 
-    rebuildMenu()
+    rebuildMenu("")
 
     table.insert(self.Window.Connections,
         button.MouseButton1Click:Connect(function()
             opened = not opened
+            if opened then
+                rebuildMenu(searchBox and searchBox.Text or "")
+            end
             menu.Visible = opened
+            updateHolderHeight()
         end)
     )
 
@@ -905,7 +1019,9 @@ function Tab:AddDropdown(text, items, default, callback)
 
     function api:SetItems(newItems)
         items = newItems or {}
-        rebuildMenu()
+        if opened then
+            rebuildMenu(searchBox and searchBox.Text or "")
+        end
     end
 
     return api
