@@ -1,0 +1,225 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local Library = {}
+Library.__index = Library
+
+local Window = {}
+Window.__index = Window
+
+local Tab = {}
+Tab.__index = Tab
+
+function Library:GetThemes()
+    return {"Dark"}
+end
+
+function Library:SetTheme(name)
+    self.Theme = {Name = name}
+    Library.Theme = self.Theme
+end
+
+local function getTheme()
+    return Library.Theme or {Background = Color3.fromRGB(20,20,25), Accent2 = Color3.fromRGB(60,60,80), Accent = Color3.fromRGB(65,130,255), Text = Color3.fromRGB(240,240,255), SubText = Color3.fromRGB(170,170,190)}
+end
+
+function Library:CreateWindow(options)
+    options = options or {}
+    self:SetTheme(options.DefaultTheme or "Dark")
+
+    local player = Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    local theme = getTheme()
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = (options.Title or "MyUI") .. "_Main"
+    gui.IgnoreGuiInset = true
+    gui.ResetOnSpawn = false
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.DisplayOrder = 9999
+    gui.Parent = playerGui
+
+    local root = Instance.new("Frame")
+    root.Name = "MainFrame"
+    root.Size = UDim2.new(0, 500, 0, 320)
+    root.Position = UDim2.new(0.5, -250, 0.5, -160)
+    root.BackgroundColor3 = theme.Background
+    root.BorderSizePixel = 0
+    root.Parent = gui
+
+    local topBar = Instance.new("Frame")
+    topBar.Name = "TopBar"
+    topBar.Size = UDim2.new(1, 0, 0, 32)
+    topBar.BackgroundColor3 = theme.Accent2
+    topBar.BorderSizePixel = 0
+    topBar.Parent = root
+
+    local title = Instance.new("TextLabel")
+    title.BackgroundTransparency = 1
+    title.Position = UDim2.new(0, 10, 0, 0)
+    title.Size = UDim2.new(1, -20, 1, 0)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.TextColor3 = theme.Text
+    title.Text = (options.Title or "Window") .. (options.SubTitle and (" - " .. options.SubTitle) or "")
+    title.Parent = topBar
+
+    local content = Instance.new("Frame")
+    content.Name = "Content"
+    content.Size = UDim2.new(1, 0, 1, -32)
+    content.Position = UDim2.new(0, 0, 0, 32)
+    content.BackgroundTransparency = 1
+    content.Parent = root
+
+    local tabBar = Instance.new("Frame")
+    tabBar.Name = "TabBar"
+    tabBar.BackgroundColor3 = theme.Background
+    tabBar.BorderSizePixel = 0
+    tabBar.Size = UDim2.new(0, 320, 0, 48)
+    tabBar.AnchorPoint = Vector2.new(0.5, 1)
+    tabBar.Position = UDim2.new(0.5, 0, 1, -4)
+    tabBar.Parent = gui
+
+    local tabHolder = Instance.new("Frame")
+    tabHolder.BackgroundTransparency = 1
+    tabHolder.Size = UDim2.new(1, -10, 1, -8)
+    tabHolder.Position = UDim2.new(0, 5, 0, 4)
+    tabHolder.Parent = tabBar
+
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.Padding = UDim.new(0, 6)
+    layout.Parent = tabHolder
+
+    local thisWindow = setmetatable({
+        Gui = gui,
+        Root = root,
+        ContentArea = content,
+        TabBar = tabHolder,
+        Tabs = {},
+        ActiveTab = nil,
+        Connections = {},
+        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
+    }, Window)
+
+    table.insert(thisWindow.Connections,
+        UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.KeyCode == thisWindow.DestroyKey then
+                thisWindow.Gui.Enabled = not thisWindow.Gui.Enabled
+            end
+        end)
+    )
+
+    return thisWindow
+end
+
+local function initials(name)
+    name = tostring(name or "")
+    if #name == 0 then return "?" end
+    return string.upper(string.sub(name,1,1))
+end
+
+function Window:ShowTab(tab)
+    local theme = getTheme()
+    if self.ActiveTab == tab then return end
+    for _, t in pairs(self.Tabs) do
+        t.Content.Visible = false
+        t.Button.BackgroundColor3 = theme.Background
+        t.Button.TextColor3 = theme.SubText
+    end
+    tab.Content.Visible = true
+    tab.Button.BackgroundColor3 = theme.Accent
+    tab.Button.TextColor3 = Color3.fromRGB(255,255,255)
+    self.ActiveTab = tab
+end
+
+function Window:AddTab(name)
+    local theme = getTheme()
+
+    local btn = Instance.new("TextButton")
+    btn.Name = name .. "_Tab"
+    btn.Parent = self.TabBar
+    btn.Size = UDim2.new(0, 40, 0, 40)
+    btn.BackgroundColor3 = theme.Background
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = true
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.Text = initials(name)
+    btn.TextColor3 = theme.Text
+
+    local content = Instance.new("Frame")
+    content.Name = name .. "_Content"
+    content.Parent = self.ContentArea
+    content.BackgroundTransparency = 1
+    content.Size = UDim2.new(1, -10, 1, -10)
+    content.Position = UDim2.new(0, 5, 0, 5)
+    content.Visible = false
+
+    local list = Instance.new("UIListLayout")
+    list.FillDirection = Enum.FillDirection.Vertical
+    list.Padding = UDim.new(0, 4)
+    list.SortOrder = Enum.SortOrder.LayoutOrder
+    list.Parent = content
+
+    local tab = setmetatable({
+        Window = self,
+        Name = name,
+        Button = btn,
+        Content = content
+    }, Tab)
+
+    table.insert(self.Connections,
+        btn.MouseButton1Click:Connect(function()
+            self:ShowTab(tab)
+        end)
+    )
+
+    self.Tabs[name] = tab
+    if not self.ActiveTab then
+        self:ShowTab(tab)
+    end
+
+    return tab
+end
+
+function Window:Destroy()
+    for _, c in ipairs(self.Connections) do
+        if c.Connected then c:Disconnect() end
+    end
+    self.Connections = {}
+    if self.Gui and self.Gui.Parent then
+        self.Gui:Destroy()
+    end
+end
+
+function Tab:AddButton(text, callback)
+    callback = callback or function() end
+    local theme = getTheme()
+
+    local btn = Instance.new("TextButton")
+    btn.Name = "Button"
+    btn.Parent = self.Content
+    btn.Size = UDim2.new(1, -10, 0, 28)
+    btn.BackgroundColor3 = theme.Accent2
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = true
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.TextColor3 = theme.Text
+    btn.Text = text
+
+    table.insert(self.Window.Connections,
+        btn.MouseButton1Click:Connect(function()
+            callback()
+        end)
+    )
+
+    return btn
+end
+
+return Library
