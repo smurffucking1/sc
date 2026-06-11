@@ -78,12 +78,6 @@ local function getOrCreateBlur()
     return blur
 end
 
-local function applyCornerRadius(uiCorner, window, scale)
-    scale = scale or 1
-    local r = window.CornerRadius or 10
-    uiCorner.CornerRadius = UDim.new(0, math.floor(r * scale))
-end
-
 -- MAIN CREATION FUNCTION
 function Library:CreateWindow(options)
     options = options or {}
@@ -209,24 +203,23 @@ function Library:CreateWindow(options)
     contentCorner.CornerRadius = UDim.new(0, 10)
     contentCorner.Parent = contentArea
 
-local thisWindow = setmetatable({
-    Library = selfLib,
-    MainGui = mainGui,
-    BarGui = barGui,
-    Root = rootFrame,
-    Container = container,
-    TabBar = tabHolder,
-    ContentArea = contentArea,
-    Tabs = {},
-    ActiveTab = nil,
-    Connections = {},
-    DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
-    Blur = blur,
-    TabBarAlignment = "Center",
-    TabBarOffset = 0,
-    Padding = 10,
-    CornerRadius = 10, -- NEW
-}, Window)
+    local thisWindow = setmetatable({
+        Library = selfLib,
+        MainGui = mainGui,
+        BarGui = barGui,
+        Root = rootFrame,
+        Container = container,
+        TabBar = tabHolder,
+        ContentArea = contentArea,
+        Tabs = {},
+        ActiveTab = nil,
+        Connections = {},
+        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
+        Blur = blur,
+        TabBarAlignment = "Center",
+        TabBarOffset = 0,
+        Padding = 10,
+    }, Window)
 
     -- function to re-apply padding to tabs (content frames + list padding)
     function thisWindow:ApplyPadding()
