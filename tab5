@@ -1,4 +1,4 @@
--- MyUILib.lua (complete)
+-- MyUILib.lua (final merged version)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -163,20 +163,21 @@ function Library:CreateWindow(options)
         .. (options.SubTitle and (" - " .. options.SubTitle) or "")
     titleLabel.Parent = topBar
 
-    -- TASKBAR (BOTTOM)
+    -- TASKBAR (dock-style, bottom)
     local tabBar = Instance.new("Frame")
     tabBar.Name = "TabBar"
     tabBar.BackgroundColor3 = selfLib.Theme.Background
     tabBar.BorderSizePixel = 0
-    tabBar.Size = UDim2.new(1, 0, 0, 56)
-    tabBar.Position = UDim2.new(0, 0, 1, -56)
+    tabBar.Size = UDim2.new(0, 420, 0, 56)             -- initial, will be resized
+    tabBar.AnchorPoint = Vector2.new(0.5, 1)
+    tabBar.Position = UDim2.new(0.5, 0, 1, -4)
     tabBar.Parent = barGui
 
     local tabHolder = Instance.new("Frame")
     tabHolder.Name = "TabHolder"
     tabHolder.BackgroundTransparency = 1
-    tabHolder.Size = UDim2.new(0, 420, 1, -8)
-    tabHolder.Position = UDim2.new(0.5, -210, 0, 4)
+    tabHolder.Size = UDim2.new(1, -10, 1, -8)
+    tabHolder.Position = UDim2.new(0, 5, 0, 4)
     tabHolder.Parent = tabBar
 
     local tabList = Instance.new("UIListLayout")
@@ -207,6 +208,7 @@ function Library:CreateWindow(options)
         Root = rootFrame,
         Container = container,
         TabBar = tabHolder,
+        TabBarFrame = tabBar,
         ContentArea = contentArea,
         Tabs = {},
         ActiveTab = nil,
@@ -217,22 +219,27 @@ function Library:CreateWindow(options)
         TabBarOffset = 0,
     }, Window)
 
-    -- dynamic taskbar tile strip width + alignment
+    -- dynamic dock width + alignment
     local function updateTabHolderSize()
         local total = tabList.AbsoluteContentSize.X
         local padding = 20
         local width = math.max(total + padding, 120)
-        tabHolder.Size = UDim2.new(0, width, 1, -8)
+
+        tabBar.Size = UDim2.new(0, width, 0, 56)
+        tabHolder.Size = UDim2.new(1, -10, 1, -8)
 
         local align = thisWindow.TabBarAlignment
         local offset = thisWindow.TabBarOffset
 
         if align == "Left" then
-            tabHolder.Position = UDim2.new(0, 10 + offset, 0, 4)
+            tabBar.AnchorPoint = Vector2.new(0, 1)
+            tabBar.Position = UDim2.new(0, 10 + offset, 1, -4)
         elseif align == "Right" then
-            tabHolder.Position = UDim2.new(1, -width - 10 + offset, 0, 4)
+            tabBar.AnchorPoint = Vector2.new(1, 1)
+            tabBar.Position = UDim2.new(1, -10 + offset, 1, -4)
         else
-            tabHolder.Position = UDim2.new(0.5, -width/2 + offset, 0, 4)
+            tabBar.AnchorPoint = Vector2.new(0.5, 1)
+            tabBar.Position = UDim2.new(0.5, offset, 1, -4)
         end
     end
 
@@ -280,11 +287,11 @@ function Library:CreateWindow(options)
         tween:Play()
     end
 
-    -- slide-up taskbar
+    -- slide-up dock
     do
         local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local startPos = UDim2.new(0, 0, 1, 0)
-        local endPos = UDim2.new(0, 0, 1, -56)
+        local endPos = tabBar.Position
+        local startPos = UDim2.new(endPos.X.Scale, endPos.X.Offset, 1, 60)
 
         tabBar.Position = startPos
 
@@ -353,7 +360,7 @@ function Window:ShowTab(tab)
         return
     end
 
-    for _, t in pairs(self.Tabs) do
+    for _, t in ipairs(self.Tabs) do
         t.Content.Visible = false
         t.Button.BackgroundColor3 = theme.TabInactive
         t.Button.TextColor3 = theme.SubText
@@ -604,302 +611,6 @@ function Tab:AddSlider(text, min, max, default, callback)
     knob.Position = UDim2.new(0, 0, 0.5, 0)
 
     local knobCorner = Instance.new("UICorner")
-    knobCorner.CornerRadius = UDim.new(1, 0)
+    knobCorner.CornerRadius = UDim.New(1, 0)
     knobCorner.Parent = knob
-
-    local dragging = false
-    local currentValue = default
-
-    local function setFromX(x)
-        local absPos = bar.AbsolutePosition.X
-        local absSize = bar.AbsoluteSize.X
-        local alpha = math.clamp((x - absPos) / absSize, 0, 1)
-        local value = math.floor(min + (max - min) * alpha + 0.5)
-        currentValue = value
-        fill.Size = UDim2.new(alpha, 0, 1, 0)
-        knob.Position = UDim2.new(alpha, 0, 0.5, 0)
-        label.Text = string.format("%s: %d", text, value)
-        callback(value)
-    end
-
-    local uis = UserInputService
-
-    table.insert(self.Window.Connections,
-        bar.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                setFromX(input.Position.X)
-            end
-        end)
-    )
-
-    table.insert(self.Window.Connections,
-        bar.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
-            end
-        end)
-    )
-
-    table.insert(self.Window.Connections,
-        uis.InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                setFromX(input.Position.X)
-            end
-        end)
-    )
-
-    local alpha0 = (default - min) / (max - min)
-    fill.Size = UDim2.new(alpha0, 0, 1, 0)
-    knob.Position = UDim2.new(alpha0, 0, 0.5, 0)
-
-    return {
-        Set = function(_, v)
-            v = math.clamp(v, min, max)
-            local a = (v - min) / (max - min)
-            currentValue = v
-            fill.Size = UDim2.new(a, 0, 1, 0)
-            knob.Position = UDim2.new(a, 0, 0.5, 0)
-            label.Text = string.format("%s: %d", text, v)
-            callback(v)
-        end,
-        Get = function()
-            return currentValue
-        end,
-    }
 end
-
--- Keybind
-function Tab:AddKeybind(text, initialKey, callback)
-    callback = callback or function() end
-    local theme = self.Window.Library.Theme
-
-    local holder = Instance.new("Frame")
-    holder.Name = "Keybind"
-    holder.Parent = self.Content
-    holder.Size = UDim2.new(1, -10, 0, 28)
-    holder.BackgroundTransparency = 1
-
-    local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Parent = holder
-    label.BackgroundTransparency = 1
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.Size = UDim2.new(1, -80, 1, 0)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextColor3 = theme.Text
-    label.Text = text
-
-    local button = Instance.new("TextButton")
-    button.Name = "KeyButton"
-    button.Parent = holder
-    button.Size = UDim2.new(0, 60, 0, 24)
-    button.Position = UDim2.new(1, -62, 0.5, -12)
-    button.BackgroundColor3 = theme.Accent2
-    button.BorderSizePixel = 0
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 12
-    button.TextColor3 = theme.Text
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 4)
-    corner.Parent = button
-
-    local currentKey = initialKey
-    if typeof(currentKey) ~= "EnumItem" or currentKey.EnumType ~= Enum.KeyCode then
-        currentKey = Enum.KeyCode.RightShift
-    end
-    button.Text = currentKey.Name
-
-    local listening = false
-
-    local function setKey(keyCode)
-        if typeof(keyCode) ~= "EnumItem" or keyCode.EnumType ~= Enum.KeyCode then
-            return
-        end
-        currentKey = keyCode
-        button.Text = currentKey.Name
-        callback(currentKey)
-    end
-
-    table.insert(self.Window.Connections,
-        button.MouseButton1Click:Connect(function()
-            if listening then
-                return
-            end
-            listening = true
-            button.Text = "..."
-            local conn
-            conn = UserInputService.InputBegan:Connect(function(input, gp)
-                if gp then
-                    return
-                end
-                if input.KeyCode ~= Enum.KeyCode.Unknown then
-                    setKey(input.KeyCode)
-                    listening = false
-                    if conn and conn.Connected then
-                        conn:Disconnect()
-                    end
-                end
-            end)
-        end)
-    )
-
-    return {
-        Get = function()
-            return currentKey
-        end,
-        Set = function(_, keyCode)
-            setKey(keyCode)
-        end,
-    }
-end
-
--- Dropdown (functional, runtime SetItems)
-function Tab:AddDropdown(text, items, default, callback)
-    callback = callback or function() end
-    items = items or {}
-
-    local theme = self.Window.Library.Theme
-
-    local holder = Instance.new("Frame")
-    holder.Name = "Dropdown"
-    holder.Parent = self.Content
-    holder.Size = UDim2.new(1, -10, 0, 32)
-    holder.BackgroundTransparency = 1
-
-    local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Parent = holder
-    label.BackgroundTransparency = 1
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.Size = UDim2.new(0.5, 0, 1, 0)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextColor3 = theme.Text
-    label.Text = text
-
-    local button = Instance.new("TextButton")
-    button.Name = "MainButton"
-    button.Parent = holder
-    button.Size = UDim2.new(0.5, -4, 1, 0)
-    button.Position = UDim2.new(0.5, 4, 0, 0)
-    button.BackgroundColor3 = theme.Accent2
-    button.BorderSizePixel = 0
-    button.Font = Enum.Font.Gotham
-    button.TextSize = 14
-    button.TextColor3 = theme.Text
-    button.TextXAlignment = Enum.TextXAlignment.Left
-    button.Text = tostring(default or "Select")
-
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
-    btnCorner.Parent = button
-
-    local menu = Instance.new("Frame")
-    menu.Name = "Menu"
-    menu.Parent = holder
-    menu.BackgroundColor3 = theme.Background
-    menu.BorderSizePixel = 0
-    menu.Position = UDim2.new(0.5, 4, 1, 2)
-    menu.Size = UDim2.new(0.5, -4, 0, 0)
-    menu.Visible = false
-    menu.ClipsDescendants = true
-    menu.ZIndex = 50
-
-    local menuCorner = Instance.new("UICorner")
-    menuCorner.CornerRadius = UDim.new(0, 6)
-    menuCorner.Parent = menu
-    menuCorner.ZIndex = 50
-
-    local list = Instance.new("UIListLayout")
-    list.FillDirection = Enum.FillDirection.Vertical
-    list.SortOrder = Enum.SortOrder.LayoutOrder
-    list.Padding = UDim.new(0, 2)
-    list.Parent = menu
-    list.ZIndex = 50
-
-    local opened = false
-    local currentValue = default
-
-    local function rebuildMenu()
-        for _, child in ipairs(menu:GetChildren()) do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-
-        for _, v in ipairs(items) do
-            local opt = Instance.new("TextButton")
-            opt.Name = "Option"
-            opt.Parent = menu
-            opt.BackgroundColor3 = theme.Accent2
-            opt.BorderSizePixel = 0
-            opt.Size = UDim2.new(1, -4, 0, 24)
-            opt.Font = Enum.Font.Gotham
-            opt.TextSize = 14
-            opt.TextColor3 = theme.Text
-            opt.TextXAlignment = Enum.TextXAlignment.Left
-            opt.Text = tostring(v)
-            opt.ZIndex = 51
-
-            local c = Instance.new("UICorner")
-            c.CornerRadius = UDim.new(0, 4)
-            c.Parent = opt
-            c.ZIndex = 51
-
-            table.insert(self.Window.Connections,
-                opt.MouseButton1Click:Connect(function()
-                    currentValue = v
-                    button.Text = tostring(v)
-                    callback(v)
-                    opened = false
-                    menu.Visible = false
-                end)
-            )
-        end
-
-        local count = #items
-        local h = count > 0 and (count * 26 + 4) or 0
-        menu.Size = UDim2.new(menu.Size.X.Scale, menu.Size.X.Offset, 0, h)
-    end
-
-    rebuildMenu()
-
-    table.insert(self.Window.Connections,
-        button.MouseButton1Click:Connect(function()
-            opened = not opened
-            menu.Visible = opened
-        end)
-    )
-
-    if default ~= nil then
-        currentValue = default
-        button.Text = tostring(default)
-        callback(default)
-    end
-
-    local api = {}
-
-    function api:Set(value)
-        currentValue = value
-        button.Text = tostring(value)
-        callback(value)
-    end
-
-    function api:Get()
-        return currentValue
-    end
-
-    function api:SetItems(newItems)
-        items = newItems or {}
-        rebuildMenu()
-    end
-
-    return api
-end
-
-return Library
