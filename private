@@ -1,0 +1,164 @@
+-- MyUILib.lua
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local Library = {}
+Library.__index = Library
+
+-- Themes
+Library.Themes = {
+    Dark = {
+        Background = Color3.fromRGB(20, 20, 25),
+        Accent = Color3.fromRGB(65, 130, 255),
+        Accent2 = Color3.fromRGB(90, 90, 110),
+        Text = Color3.fromRGB(240, 240, 255),
+        SubText = Color3.fromRGB(170, 170, 190),
+        TabInactive = Color3.fromRGB(35, 35, 45),
+        TabActive = Color3.fromRGB(65, 130, 255),
+    },
+    Light = {
+        Background = Color3.fromRGB(235, 235, 240),
+        Accent = Color3.fromRGB(50, 120, 255),
+        Accent2 = Color3.fromRGB(210, 210, 220),
+        Text = Color3.fromRGB(20, 20, 30),
+        SubText = Color3.fromRGB(80, 80, 100),
+        TabInactive = Color3.fromRGB(210, 210, 225),
+        TabActive = Color3.fromRGB(50, 120, 255),
+    },
+    AMOLED = {
+        Background = Color3.fromRGB(0, 0, 0),
+        Accent = Color3.fromRGB(0, 170, 255),
+        Accent2 = Color3.fromRGB(20, 20, 20),
+        Text = Color3.fromRGB(255, 255, 255),
+        SubText = Color3.fromRGB(130, 130, 130),
+        TabInactive = Color3.fromRGB(10, 10, 10),
+        TabActive = Color3.fromRGB(0, 170, 255),
+    },
+}
+
+function Library:GetThemes()
+    local names = {}
+    for name in pairs(self.Themes) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+    return names
+end
+
+function Library:SetTheme(name)
+    if not self.Themes[name] then return end
+    self.Theme = self.Themes[name]
+    self.Theme.Name = name
+    -- TODO: propagate theme to all open windows & elements
+end
+
+-- Window object
+local Window = {}
+Window.__index = Window
+
+function Library:CreateWindow(options)
+    options = options or {}
+    local selfLib = setmetatable({}, Library)
+
+    local player = Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+
+    local themeName = options.DefaultTheme or "Dark"
+    selfLib:SetTheme(themeName)
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = options.Title or "MyUILib"
+    gui.IgnoreGuiInset = true
+    gui.ResetOnSpawn = false
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.Parent = playerGui
+
+    local rootFrame = Instance.new("Frame")
+    rootFrame.Name = "MainFrame"
+    rootFrame.Size = UDim2.new(0, 500, 0, 320)
+    rootFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
+    rootFrame.BackgroundColor3 = selfLib.Theme.Background
+    rootFrame.BorderSizePixel = 0
+    rootFrame.Parent = gui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = rootFrame
+
+    local topBar = Instance.new("Frame")
+    topBar.Name = "TopBar"
+    topBar.Size = UDim2.new(1, 0, 0, 32)
+    topBar.BackgroundColor3 = selfLib.Theme.Accent2
+    topBar.BorderSizePixel = 0
+    topBar.Parent = rootFrame
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Position = UDim2.new(0, 10, 0, 0)
+    titleLabel.Size = UDim2.new(1, -20, 1, 0)
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.TextColor3 = selfLib.Theme.Text
+    titleLabel.TextSize = 16
+    titleLabel.Text = (options.Title or "Window") ..
+        (options.SubTitle and (" - " .. options.SubTitle) or "")
+    titleLabel.Parent = topBar
+
+    local tabBar = Instance.new("Frame")
+    tabBar.Name = "TabBar"
+    tabBar.BackgroundColor3 = selfLib.Theme.Background
+    tabBar.BorderSizePixel = 0
+    tabBar.Size = UDim2.new(0, 140, 1, -32)
+    tabBar.Position = UDim2.new(0, 0, 0, 32)
+    tabBar.Parent = rootFrame
+
+    local tabHolder = Instance.new("Frame")
+    tabHolder.Name = "TabHolder"
+    tabHolder.BackgroundTransparency = 1
+    tabHolder.Size = UDim2.new(1, 0, 1, -10)
+    tabHolder.Position = UDim2.new(0, 0, 0, 5)
+    tabHolder.Parent = tabBar
+
+    local tabList = Instance.new("UIListLayout")
+    tabList.FillDirection = Enum.FillDirection.Vertical
+    tabList.SortOrder = Enum.SortOrder.LayoutOrder
+    tabList.Padding = UDim.new(0, 4)
+    tabList.Parent = tabHolder
+
+    local contentArea = Instance.new("Frame")
+    contentArea.Name = "Content"
+    contentArea.BackgroundColor3 = selfLib.Theme.Background
+    contentArea.BorderSizePixel = 0
+    contentArea.Size = UDim2.new(1, -140, 1, -32)
+    contentArea.Position = UDim2.new(0, 140, 0, 32)
+    contentArea.Parent = rootFrame
+
+    local contentCorner = Instance.new("UICorner")
+    contentCorner.CornerRadius = UDim.new(0, 10)
+    contentCorner.Parent = contentArea
+
+    local thisWindow = setmetatable({
+        Library = selfLib,
+        Gui = gui,
+        Root = rootFrame,
+        TabBar = tabHolder,
+        ContentArea = contentArea,
+        Tabs = {},
+        ActiveTab = nil,
+        Connections = {},
+        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
+    }, Window)
+
+    -- keybind to toggle visibility
+    table.insert(thisWindow.Connections,
+        UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.KeyCode == thisWindow.DestroyKey then
+                thisWindow.Gui.Enabled = not thisWindow.Gui.Enabled
+            end
+        end)
+    )
+
+    return thisWindow
+end
