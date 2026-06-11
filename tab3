@@ -1,9 +1,11 @@
--- MyUILib.lua (padding + global GUI rounding + dock scaling + animations)
+-- tab5 - updated: no title bar, fixed size + size setters, pill toggles, simple config API
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local StarterGui = game:GetService("StarterGui")
+local HttpService = game:GetService("HttpService") -- for potential JSON use [page:0]
 
 local Library = {}
 Library.__index = Library
@@ -13,7 +15,7 @@ Library.Themes = {
     Dark = {
         Background = Color3.fromRGB(20, 20, 25),
         Accent = Color3.fromRGB(65, 130, 255),
-        Accent2 = Color3.fromRGB(90, 90, 110),
+        Accent2 = Color3.fromRGB(60, 60, 80),
         Text = Color3.fromRGB(240, 240, 255),
         SubText = Color3.fromRGB(170, 170, 190),
         TabInactive = Color3.fromRGB(35, 35, 45),
@@ -22,7 +24,7 @@ Library.Themes = {
     Light = {
         Background = Color3.fromRGB(235, 235, 240),
         Accent = Color3.fromRGB(50, 120, 255),
-        Accent2 = Color3.fromRGB(210, 210, 220),
+        Accent2 = Color3.fromRGB(210, 210, 225),
         Text = Color3.fromRGB(20, 20, 30),
         SubText = Color3.fromRGB(80, 80, 100),
         TabInactive = Color3.fromRGB(210, 210, 225),
@@ -31,7 +33,7 @@ Library.Themes = {
     AMOLED = {
         Background = Color3.fromRGB(0, 0, 0),
         Accent = Color3.fromRGB(0, 170, 255),
-        Accent2 = Color3.fromRGB(20, 20, 20),
+        Accent2 = Color3.fromRGB(25, 25, 25),
         Text = Color3.fromRGB(255, 255, 255),
         SubText = Color3.fromRGB(130, 130, 130),
         TabInactive = Color3.fromRGB(10, 10, 10),
@@ -55,15 +57,12 @@ function Library:SetTheme(name)
     Library.Theme = self.Theme
 end
 
--- Window object
 local Window = {}
 Window.__index = Window
 
--- Tab object
 local Tab = {}
 Tab.__index = Tab
 
--- Blur helper
 local function getOrCreateBlur()
     local blur = Lighting:FindFirstChildOfClass("BlurEffect")
     if not blur then
@@ -75,14 +74,19 @@ local function getOrCreateBlur()
     return blur
 end
 
--- Global rounding helper (uses UICorner.CornerRadius)
 local function applyCornerRadius(uiCorner, window, scale)
     scale = scale or 1
     local r = window.CornerRadius or 10
     uiCorner.CornerRadius = UDim.new(0, math.floor(r * scale))
 end
 
--- MAIN CREATION FUNCTION
+-- Simple shared config store in getgenv [web:191]
+local function getConfigStore()
+    getgenv()._tab5_configs = getgenv()._tab5_configs or {}
+    return getgenv()._tab5_configs
+end
+
+-- MAIN
 function Library:CreateWindow(options)
     options = options or {}
     local selfLib = setmetatable({}, Library)
@@ -90,21 +94,18 @@ function Library:CreateWindow(options)
     local player = Players.LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
 
-    local themeName = options.DefaultTheme or "Dark"
-    selfLib:SetTheme(themeName)
+    selfLib:SetTheme(options.DefaultTheme or "Dark")
 
     local blur = getOrCreateBlur()
 
-    -- MAIN WINDOW GUI
     local mainGui = Instance.new("ScreenGui")
-    mainGui.Name = (options.Title or "MyUILib") .. "_Main"
+    mainGui.Name = (options.Title or "MyUI") .. "_Main"
     mainGui.IgnoreGuiInset = true
     mainGui.ResetOnSpawn = false
     mainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     mainGui.DisplayOrder = 9999
     mainGui.Parent = playerGui
 
-    -- full-screen input blocker
     local blocker = Instance.new("TextButton")
     blocker.Name = "InputBlocker"
     blocker.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -117,25 +118,69 @@ function Library:CreateWindow(options)
     blocker.Modal = true
     blocker.Parent = mainGui
 
-    -- TASKBAR GUI
     local barGui = Instance.new("ScreenGui")
-    barGui.Name = (options.Title or "MyUILib") .. "_Bar"
+    barGui.Name = (options.Title or "MyUI") .. "_Bar"
     barGui.IgnoreGuiInset = true
     barGui.ResetOnSpawn = false
     barGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     barGui.DisplayOrder = 9999
     barGui.Parent = playerGui
 
-    -- MAIN WINDOW CONTAINER (side-hugging)
+    local thisWindow = setmetatable({
+        Library = selfLib,
+        MainGui = mainGui,
+        BarGui = barGui,
+        Root = nil,
+        Container = nil,
+        TabBar = nil,
+        ContentArea = nil,
+        Tabs = {},
+        ActiveTab = nil,
+        Connections = {},
+        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
+        Blur = blur,
+
+        TabBarAlignment = "Center",
+        TabBarOffset = 0,
+
+        Padding = 10,
+        CornerRadius = 18,
+        DockScale = 1,
+        AnimateOnOpen = true,
+        Width = 500,
+        Height = 360,
+    }, Window)
+
+    -- Container with fixed size
     local container = Instance.new("Frame")
     container.Name = "MainContainer"
-    container.Size = UDim2.new(0.9, 0, 0.7, 0) -- 90% width, 70% height
-    container.Position = UDim2.new(0.5, 0, 0.5, 0)
     container.BackgroundTransparency = 1
     container.BorderSizePixel = 0
     container.AnchorPoint = Vector2.new(0.5, 0.5)
     container.Parent = mainGui
+    thisWindow.Container = container
 
+    -- Set initial size/position
+    function thisWindow:SetSize(width, height)
+        self.Width = math.max(300, tonumber(width) or self.Width)
+        self.Height = math.max(220, tonumber(height) or self.Height)
+        if self.Container then
+            self.Container.Size = UDim2.new(0, self.Width, 0, self.Height)
+            self.Container.Position = UDim2.new(0.5, -self.Width / 2, 0.5, -self.Height / 2)
+        end
+    end
+
+    function thisWindow:SetWidth(w)
+        self:SetSize(w, self.Height)
+    end
+
+    function thisWindow:SetHeight(h)
+        self:SetSize(self.Width, h)
+    end
+
+    thisWindow:SetSize(thisWindow.Width, thisWindow.Height)
+
+    -- Outer card
     local rootFrame = Instance.new("Frame")
     rootFrame.Name = "MainFrame"
     rootFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -143,30 +188,26 @@ function Library:CreateWindow(options)
     rootFrame.BackgroundColor3 = selfLib.Theme.Background
     rootFrame.BorderSizePixel = 0
     rootFrame.Parent = container
+    thisWindow.Root = rootFrame
 
     local corner = Instance.new("UICorner")
     corner.Parent = rootFrame
 
-    local topBar = Instance.new("Frame")
-    topBar.Name = "TopBar"
-    topBar.Size = UDim2.new(1, 0, 0, 32)
-    topBar.BackgroundColor3 = selfLib.Theme.Background -- unified card look
-    topBar.BorderSizePixel = 0
-    topBar.Parent = rootFrame
+    -- Content card with padding (no title bar)
+    local contentArea = Instance.new("Frame")
+    contentArea.Name = "Content"
+    contentArea.BackgroundColor3 = selfLib.Theme.Background
+    contentArea.BorderSizePixel = 0
+    contentArea.Size = UDim2.new(1, -24, 1, -24)
+    contentArea.Position = UDim2.new(0, 12, 0, 12)
+    contentArea.ZIndex = 1
+    contentArea.Parent = rootFrame
+    thisWindow.ContentArea = contentArea
 
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0, 10, 0, 0)
-    titleLabel.Size = UDim2.new(1, -20, 1, 0)
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.TextColor3 = selfLib.Theme.Text
-    titleLabel.TextSize = 16
-    titleLabel.Text = (options.Title or "Window") .. (options.SubTitle and (" - " .. options.SubTitle) or "")
-    titleLabel.Parent = topBar
+    local contentCorner = Instance.new("UICorner")
+    contentCorner.Parent = contentArea
 
-    -- TASKBAR (BOTTOM) – dock
+    -- Dock
     local tabBar = Instance.new("Frame")
     tabBar.Name = "TabBar"
     tabBar.BackgroundColor3 = selfLib.Theme.Background
@@ -185,6 +226,7 @@ function Library:CreateWindow(options)
     tabHolder.Size = UDim2.new(1, -10, 1, -8)
     tabHolder.Position = UDim2.new(0, 5, 0, 4)
     tabHolder.Parent = tabBar
+    thisWindow.TabBar = tabHolder
 
     local tabList = Instance.new("UIListLayout")
     tabList.FillDirection = Enum.FillDirection.Horizontal
@@ -194,48 +236,10 @@ function Library:CreateWindow(options)
     tabList.VerticalAlignment = Enum.VerticalAlignment.Center
     tabList.Parent = tabHolder
 
-    -- CONTENT
-    local contentArea = Instance.new("Frame")
-    contentArea.Name = "Content"
-    contentArea.BackgroundColor3 = selfLib.Theme.Background
-    contentArea.BorderSizePixel = 0
-    contentArea.Size = UDim2.new(1, 0, 1, -32)
-    contentArea.Position = UDim2.new(0, 0, 0, 32)
-    contentArea.ZIndex = 1
-    contentArea.Parent = rootFrame
-
-    local contentCorner = Instance.new("UICorner")
-    contentCorner.Parent = contentArea
-
-    local thisWindow = setmetatable({
-        Library = selfLib,
-        MainGui = mainGui,
-        BarGui = barGui,
-        Root = rootFrame,
-        Container = container,
-        TabBar = tabHolder,
-        ContentArea = contentArea,
-        Tabs = {},
-        ActiveTab = nil,
-        Connections = {},
-        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
-        Blur = blur,
-
-        TabBarAlignment = "Center",
-        TabBarOffset = 0,
-
-        Padding = 10,
-        CornerRadius = 18,   -- more rounded overall
-        DockScale = 1,       -- dock scaling
-        AnimateOnOpen = true,
-    }, Window)
-
-    -- apply corner radius
     applyCornerRadius(corner, thisWindow)
     applyCornerRadius(contentCorner, thisWindow)
     applyCornerRadius(tabBarCorner, thisWindow, 1)
 
-    -- re-apply padding to tabs
     function thisWindow:ApplyPadding()
         local pad = self.Padding
         for _, tabObj in pairs(self.Tabs) do
@@ -251,7 +255,6 @@ function Library:CreateWindow(options)
         end
     end
 
-    -- dynamic dock size + alignment
     local function updateTabHolderSize()
         local total = tabList.AbsoluteContentSize.X
         local padding = thisWindow.Padding
@@ -280,16 +283,13 @@ function Library:CreateWindow(options)
     end
 
     thisWindow.UpdateTabDock = updateTabHolderSize
-
     tabList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateTabHolderSize)
     updateTabHolderSize()
 
-    -- disable CoreGui while UI exists
     pcall(function()
         StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
     end)
 
-    -- toggle key
     table.insert(thisWindow.Connections, UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
         if input.KeyCode == thisWindow.DestroyKey then
@@ -301,22 +301,15 @@ function Library:CreateWindow(options)
         end
     end))
 
-    -- slide-in main
     if thisWindow.AnimateOnOpen then
         local tweenInfo = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local currentPos = container.Position
-        local fromPos
-        if currentPos.X.Scale <= 0.5 then
-            fromPos = UDim2.new(-0.2, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset)
-        else
-            fromPos = UDim2.new(1.2, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset)
-        end
+        local fromPos = UDim2.new(1.2, 0, 0.5, 0)
         container.Position = fromPos
         local tween = TweenService:Create(container, tweenInfo, {Position = currentPos})
         tween:Play()
     end
 
-    -- slide-up dock
     if thisWindow.AnimateOnOpen then
         local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         local endPos = tabBar.Position
@@ -326,7 +319,6 @@ function Library:CreateWindow(options)
         tween:Play()
     end
 
-    -- blur on open
     thisWindow.Blur.Enabled = true
     thisWindow.Blur.Size = 18
 
@@ -334,7 +326,6 @@ function Library:CreateWindow(options)
 end
 
 -- Window methods
-
 function Window:SetToggleKey(keyCode)
     self.DestroyKey = keyCode
 end
@@ -384,19 +375,20 @@ function Window:SetCornerRadius(pixels)
         applyCornerRadius(contentCorner, self)
     end
 
-    local barCorner = self.BarGui:FindFirstChild("TabBar", true)
-    if barCorner and barCorner:FindFirstChildOfClass("UICorner") then
-        applyCornerRadius(barCorner:FindFirstChildOfClass("UICorner"), self, 1)
+    local barFrame = self.BarGui:FindFirstChild("TabBar", true)
+    if barFrame then
+        local barCorner = barFrame:FindFirstChildOfClass("UICorner")
+        if barCorner then
+            applyCornerRadius(barCorner, self, 1)
+        end
     end
 end
 
 function Window:SetDockScale(scale)
     self.DockScale = math.clamp(tonumber(scale) or 1, 0.6, 1.8)
-
     if self.UpdateTabDock then
-        self.UpdateTabDock()
+        self:UpdateTabDock()
     end
-
     for _, tabObj in pairs(self.Tabs) do
         local btn = tabObj.Button
         if btn then
@@ -411,11 +403,19 @@ function Window:SetAnimations(enabled)
     self.AnimateOnOpen = not not enabled
 end
 
+function Window:SaveConfig(name, data)
+    local store = getConfigStore()
+    store[name or "default"] = data
+end
+
+function Window:LoadConfig(name)
+    local store = getConfigStore()
+    return store[name or "default"]
+end
+
 function Window:Destroy()
     for _, conn in ipairs(self.Connections) do
-        if conn.Connected then
-            conn:Disconnect()
-        end
+        if conn.Connected then conn:Disconnect() end
     end
     table.clear(self.Connections)
 
@@ -454,9 +454,7 @@ end
 
 local function getInitials(name)
     name = tostring(name or "")
-    if #name == 0 then
-        return "?"
-    end
+    if #name == 0 then return "?" end
     return string.upper(string.sub(name, 1, 1))
 end
 
@@ -526,7 +524,7 @@ function Window:AddTab(name)
     return tabObj
 end
 
--- Tab element methods
+-- Tab methods
 
 function Tab:AddLabel(text)
     local theme = self.Window.Library.Theme
@@ -572,6 +570,7 @@ function Tab:AddButton(text, callback)
     return button
 end
 
+-- New pill-style toggle: text inside, color change
 function Tab:AddToggle(text, default, callback)
     callback = callback or function() end
     local theme = self.Window.Library.Theme
@@ -582,41 +581,39 @@ function Tab:AddToggle(text, default, callback)
     holder.Size = UDim2.new(1, -10, 0, 28)
     holder.BackgroundTransparency = 1
 
-    local label = Instance.new("TextLabel")
-    label.Name = "Label"
-    label.Parent = holder
-    label.BackgroundTransparency = 1
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.Size = UDim2.new(1, -40, 1, 0)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextColor3 = theme.Text
-    label.Text = text
-
-    local box = Instance.new("TextButton")
-    box.Name = "Box"
-    box.Parent = holder
-    box.Size = UDim2.new(0, 24, 0, 24)
-    box.Position = UDim2.new(1, -26, 0.5, -12)
-    box.BackgroundColor3 = theme.Accent2
-    box.BorderSizePixel = 0
-    box.AutoButtonColor = false
-    box.Text = ""
+    local button = Instance.new("TextButton")
+    button.Name = "ToggleButton"
+    button.Parent = holder
+    button.Size = UDim2.new(1, 0, 1, 0)
+    button.Position = UDim2.new(0, 0, 0, 0)
+    button.BackgroundColor3 = theme.Accent2
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = false
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 14
+    button.TextColor3 = theme.Text
+    button.Text = text
+    button.TextXAlignment = Enum.TextXAlignment.Center
 
     local corner = Instance.new("UICorner")
-    applyCornerRadius(corner, self.Window, 0.6)
-    corner.Parent = box
+    applyCornerRadius(corner, self.Window, 0.8)
+    corner.Parent = button
 
     local state = default and true or false
     local function update()
-        box.BackgroundColor3 = state and theme.Accent or theme.Accent2
+        if state then
+            button.BackgroundColor3 = theme.Accent
+            button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            button.BackgroundColor3 = theme.Accent2
+            button.TextColor3 = theme.Text
+        end
     end
 
     update()
     callback(state)
 
-    table.insert(self.Window.Connections, box.MouseButton1Click:Connect(function()
+    table.insert(self.Window.Connections, button.MouseButton1Click:Connect(function()
         state = not state
         update()
         task.spawn(callback, state)
