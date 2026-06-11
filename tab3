@@ -817,12 +817,11 @@ function Tab:AddDropdown(text, items, default, callback)
     menuCorner.CornerRadius = UDim.new(0, 6)
     menuCorner.Parent = menu          -- no menuCorner.ZIndex
 
-    local list = Instance.new("UIListLayout")
-    list.FillDirection = Enum.FillDirection.Vertical
-    list.SortOrder = Enum.SortOrder.LayoutOrder
-    list.Padding = UDim.new(0, 2)
-    list.Parent = menu
-    list.ZIndex = 50
+local list = Instance.new("UIListLayout")
+list.FillDirection = Enum.FillDirection.Vertical
+list.SortOrder = Enum.SortOrder.LayoutOrder
+list.Padding = UDim.new(0, 2)
+list.Parent = menu
 
     local opened = false
     local currentValue = default
