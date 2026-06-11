@@ -1,4 +1,4 @@
--- tab5: full UI library
+-- MyUILib.lua (library module)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -78,13 +78,6 @@ local function getOrCreateBlur()
     return blur
 end
 
--- Corner helper
-local function applyCornerRadius(uiCorner, window, scale)
-    scale = scale or 1
-    local r = window.CornerRadius or 10
-    uiCorner.CornerRadius = UDim.new(0, math.floor(r * scale))
-end
-
 -- MAIN CREATION FUNCTION
 function Library:CreateWindow(options)
     options = options or {}
@@ -147,26 +140,8 @@ function Library:CreateWindow(options)
     rootFrame.BorderSizePixel = 0
     rootFrame.Parent = container
 
-    local thisWindow = setmetatable({
-        Library = selfLib,
-        MainGui = mainGui,
-        BarGui = barGui,
-        Root = rootFrame,
-        Container = container,
-        TabBar = nil,
-        ContentArea = nil,
-        Tabs = {},
-        ActiveTab = nil,
-        Connections = {},
-        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
-        Blur = blur,
-        TabBarAlignment = "Center",
-        TabBarOffset = 0,
-        CornerRadius = 10,
-    }, Window)
-
     local corner = Instance.new("UICorner")
-    applyCornerRadius(corner, thisWindow)
+    corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = rootFrame
 
     local topBar = Instance.new("Frame")
@@ -225,13 +200,27 @@ function Library:CreateWindow(options)
     contentArea.Parent = rootFrame
 
     local contentCorner = Instance.new("UICorner")
-    applyCornerRadius(contentCorner, thisWindow)
+    contentCorner.CornerRadius = UDim.new(0, 10)
     contentCorner.Parent = contentArea
 
-    thisWindow.TabBar = tabHolder
-    thisWindow.ContentArea = contentArea
+    local thisWindow = setmetatable({
+        Library = selfLib,
+        MainGui = mainGui,
+        BarGui = barGui,
+        Root = rootFrame,
+        Container = container,
+        TabBar = tabHolder,
+        ContentArea = contentArea,
+        Tabs = {},
+        ActiveTab = nil,
+        Connections = {},
+        DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
+        Blur = blur,
+        TabBarAlignment = "Center",
+        TabBarOffset = 0,
+    }, Window)
 
-    -- dynamic dock width + alignment
+    -- dynamic taskbar tile strip width + alignment
     local function updateTabHolderSize()
         local total = tabList.AbsoluteContentSize.X
         local padding = 20
@@ -321,7 +310,7 @@ function Library:CreateWindow(options)
     return thisWindow
 end
 
--- Window methods
+-- ===== Window methods =====
 
 function Window:SetToggleKey(keyCode)
     self.DestroyKey = keyCode
@@ -346,19 +335,6 @@ function Window:SetTabBarOffset(pixels)
     self.TabBarOffset = tonumber(pixels) or 0
     if self.UpdateTabDock then
         self.UpdateTabDock()
-    end
-end
-
-function Window:SetCornerRadius(pixels)
-    self.CornerRadius = math.max(0, tonumber(pixels) or 10)
-    -- update main frames immediately
-    local mainCorner = self.Root:FindFirstChildOfClass("UICorner")
-    if mainCorner then
-        applyCornerRadius(mainCorner, self)
-    end
-    local contentCorner = self.ContentArea:FindFirstChildOfClass("UICorner")
-    if contentCorner then
-        applyCornerRadius(contentCorner, self)
     end
 end
 
@@ -428,7 +404,7 @@ function Window:AddTab(name)
     tabButton.TextColor3 = theme.Text
 
     local buttonCorner = Instance.new("UICorner")
-    applyCornerRadius(buttonCorner, self, 0.8)
+    buttonCorner.CornerRadius = UDim.new(0, 8)
     buttonCorner.Parent = tabButton
 
     local contentFrame = Instance.new("ScrollingFrame")
@@ -470,7 +446,7 @@ function Window:AddTab(name)
     return tabObj
 end
 
--- Tab element methods
+-- ===== Tab element methods =====
 
 function Tab:AddLabel(text)
     local theme = self.Window.Library.Theme
@@ -506,7 +482,7 @@ function Tab:AddButton(text, callback)
     button.Text = text
 
     local corner = Instance.new("UICorner")
-    applyCornerRadius(corner, self.Window, 0.8)
+    corner.CornerRadius = UDim.new(0, 6)
     corner.Parent = button
 
     table.insert(self.Window.Connections,
@@ -551,7 +527,7 @@ function Tab:AddToggle(text, default, callback)
     box.Text = ""
 
     local corner = Instance.new("UICorner")
-    applyCornerRadius(corner, self.Window, 0.6)
+    corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = box
 
     local state = default and true or false
@@ -618,7 +594,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     bar.Size = UDim2.new(1, 0, 0, 6)
 
     local barCorner = Instance.new("UICorner")
-    applyCornerRadius(barCorner, self.Window, 0.3)
+    barCorner.CornerRadius = UDim.new(0, 3)
     barCorner.Parent = bar
 
     local fill = Instance.new("Frame")
@@ -629,7 +605,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     fill.Size = UDim2.new(0, 0, 1, 0)
 
     local fillCorner = Instance.new("UICorner")
-    applyCornerRadius(fillCorner, self.Window, 0.3)
+    fillCorner.CornerRadius = UDim.new(0, 3)
     fillCorner.Parent = fill
 
     local knob = Instance.new("Frame")
@@ -642,7 +618,7 @@ function Tab:AddSlider(text, min, max, default, callback)
     knob.Position = UDim2.new(0, 0, 0.5, 0)
 
     local knobCorner = Instance.new("UICorner")
-    applyCornerRadius(knobCorner, self.Window, 1)
+    knobCorner.CornerRadius = UDim.new(1, 0)
     knobCorner.Parent = knob
 
     local dragging = false
@@ -741,7 +717,7 @@ function Tab:AddKeybind(text, initialKey, callback)
     button.TextColor3 = theme.Text
 
     local corner = Instance.new("UICorner")
-    applyCornerRadius(corner, self.Window, 0.6)
+    corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = button
 
     local currentKey = initialKey
@@ -832,7 +808,7 @@ function Tab:AddDropdown(text, items, default, callback)
     button.Text = tostring(default or "Select")
 
     local btnCorner = Instance.new("UICorner")
-    applyCornerRadius(btnCorner, self.Window, 0.6)
+    btnCorner.CornerRadius = UDim.new(0, 6)
     btnCorner.Parent = button
 
     local menu = Instance.new("Frame")
@@ -847,13 +823,13 @@ function Tab:AddDropdown(text, items, default, callback)
     menu.ZIndex = 50
 
     local menuCorner = Instance.new("UICorner")
-    applyCornerRadius(menuCorner, self.Window, 0.6)
+    menuCorner.CornerRadius = UDim.new(0, 6)
     menuCorner.Parent = menu
 
     local list = Instance.new("UIListLayout")
     list.FillDirection = Enum.FillDirection.Vertical
     list.SortOrder = Enum.SortOrder.LayoutOrder
-    list.Padding = UDim2.new(0, 2)
+    list.Padding = UDim.new(0, 2) -- UDim, not UDim2
     list.Parent = menu
 
     local opened = false
@@ -881,7 +857,7 @@ function Tab:AddDropdown(text, items, default, callback)
             opt.ZIndex = 51
 
             local c = Instance.new("UICorner")
-            applyCornerRadius(c, self.Window, 0.5)
+            c.CornerRadius = UDim.new(0, 4)
             c.Parent = opt
 
             table.insert(self.Window.Connections,
