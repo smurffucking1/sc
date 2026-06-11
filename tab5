@@ -815,8 +815,7 @@ function Tab:AddDropdown(text, items, default, callback)
 
     local menuCorner = Instance.new("UICorner")
     menuCorner.CornerRadius = UDim.new(0, 6)
-    menuCorner.Parent = menu
-    menuCorner.ZIndex = 50
+    menuCorner.Parent = menu          -- no menuCorner.ZIndex
 
     local list = Instance.new("UIListLayout")
     list.FillDirection = Enum.FillDirection.Vertical
@@ -851,8 +850,7 @@ function Tab:AddDropdown(text, items, default, callback)
 
             local c = Instance.new("UICorner")
             c.CornerRadius = UDim.new(0, 4)
-            c.Parent = opt
-            c.ZIndex = 51
+            c.Parent = opt              -- no c.ZIndex
 
             table.insert(self.Window.Connections,
                 opt.MouseButton1Click:Connect(function()
