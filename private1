@@ -112,38 +112,36 @@ function Library:CreateWindow(options)
         (options.SubTitle and (" - " .. options.SubTitle) or "")
     titleLabel.Parent = topBar
 
-    local tabBar = Instance.new("Frame")
-    tabBar.Name = "TabBar"
-    tabBar.BackgroundColor3 = selfLib.Theme.Background
-    tabBar.BorderSizePixel = 0
-    tabBar.Size = UDim2.new(0, 140, 1, -32)
-    tabBar.Position = UDim2.new(0, 0, 0, 32)
-    tabBar.Parent = rootFrame
+-- bottom tab bar (like a taskbar)
+local tabBar = Instance.new("Frame")
+tabBar.Name = "TabBar"
+tabBar.BackgroundColor3 = selfLib.Theme.Background
+tabBar.BorderSizePixel = 0
+tabBar.Size = UDim2.new(1, 0, 0, 32)              -- full width, 32px tall
+tabBar.Position = UDim2.new(0, 0, 1, -32)         -- pinned to bottom of window
+tabBar.Parent = rootFrame
 
-    local tabHolder = Instance.new("Frame")
-    tabHolder.Name = "TabHolder"
-    tabHolder.BackgroundTransparency = 1
-    tabHolder.Size = UDim2.new(1, 0, 1, -10)
-    tabHolder.Position = UDim2.new(0, 0, 0, 5)
-    tabHolder.Parent = tabBar
+local tabHolder = Instance.new("Frame")
+tabHolder.Name = "TabHolder"
+tabHolder.BackgroundTransparency = 1
+tabHolder.Size = UDim2.new(1, -10, 1, -6)
+tabHolder.Position = UDim2.new(0, 5, 0, 3)
+tabHolder.Parent = tabBar
 
-    local tabList = Instance.new("UIListLayout")
-    tabList.FillDirection = Enum.FillDirection.Vertical
-    tabList.SortOrder = Enum.SortOrder.LayoutOrder
-    tabList.Padding = UDim.new(0, 4)
-    tabList.Parent = tabHolder
+local tabList = Instance.new("UIListLayout")
+tabList.FillDirection = Enum.FillDirection.Horizontal -- horizontal buttons
+tabList.SortOrder = Enum.SortOrder.LayoutOrder
+tabList.Padding = UDim.new(0, 4)
+tabList.Parent = tabHolder
 
-    local contentArea = Instance.new("Frame")
-    contentArea.Name = "Content"
-    contentArea.BackgroundColor3 = selfLib.Theme.Background
-    contentArea.BorderSizePixel = 0
-    contentArea.Size = UDim2.new(1, -140, 1, -32)
-    contentArea.Position = UDim2.new(0, 140, 0, 32)
-    contentArea.Parent = rootFrame
-
-    local contentCorner = Instance.new("UICorner")
-    contentCorner.CornerRadius = UDim.new(0, 10)
-    contentCorner.Parent = contentArea
+-- content now occupies space above the taskbar
+local contentArea = Instance.new("Frame")
+contentArea.Name = "Content"
+contentArea.BackgroundColor3 = selfLib.Theme.Background
+contentArea.BorderSizePixel = 0
+contentArea.Size = UDim2.new(1, 0, 1, -64)        -- 32 top bar + 32 tab bar
+contentArea.Position = UDim2.new(0, 0, 0, 32)
+contentArea.Parent = rootFrame
 
     local thisWindow = setmetatable({
         Library = selfLib,
