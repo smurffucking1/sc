@@ -1,4 +1,4 @@
--- MyUILib.lua (full version)
+-- MyUILib.lua (complete)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -99,6 +99,19 @@ function Library:CreateWindow(options)
     mainGui.DisplayOrder = 9999
     mainGui.Parent = playerGui
 
+    -- full-screen input blocker to prevent click-through
+    local blocker = Instance.new("TextButton")
+    blocker.Name = "InputBlocker"
+    blocker.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    blocker.BackgroundTransparency = 1
+    blocker.BorderSizePixel = 0
+    blocker.Size = UDim2.new(1, 0, 1, 0)
+    blocker.Position = UDim2.new(0, 0, 0, 0)
+    blocker.Text = ""
+    blocker.AutoButtonColor = false
+    blocker.Modal = true
+    blocker.Parent = mainGui
+
     -- TASKBAR GUI
     local barGui = Instance.new("ScreenGui")
     barGui.Name = (options.Title or "MyUILib") .. "_Bar"
@@ -107,19 +120,6 @@ function Library:CreateWindow(options)
     barGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     barGui.DisplayOrder = 9999
     barGui.Parent = playerGui
-
--- full-screen input blocker to prevent click-through
-local blocker = Instance.new("TextButton")
-blocker.Name = "InputBlocker"
-blocker.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-blocker.BackgroundTransparency = 1           -- fully invisible
-blocker.BorderSizePixel = 0
-blocker.Size = UDim2.new(1, 0, 1, 0)
-blocker.Position = UDim2.new(0, 0, 0, 0)
-blocker.Text = ""
-blocker.AutoButtonColor = false
-blocker.Modal = true                          -- consumes input for this ScreenGui
-blocker.Parent = mainGui, barGui
 
     -- MAIN WINDOW CONTAINER
     local container = Instance.new("Frame")
@@ -213,7 +213,31 @@ blocker.Parent = mainGui, barGui
         Connections = {},
         DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
         Blur = blur,
+        TabBarAlignment = "Center",
+        TabBarOffset = 0,
     }, Window)
+
+    -- dynamic taskbar tile strip width + alignment
+    local function updateTabHolderSize()
+        local total = tabList.AbsoluteContentSize.X
+        local padding = 20
+        local width = math.max(total + padding, 120)
+        tabHolder.Size = UDim2.new(0, width, 1, -8)
+
+        local align = thisWindow.TabBarAlignment
+        local offset = thisWindow.TabBarOffset
+
+        if align == "Left" then
+            tabHolder.Position = UDim2.new(0, 10 + offset, 0, 4)
+        elseif align == "Right" then
+            tabHolder.Position = UDim2.new(1, -width - 10 + offset, 0, 4)
+        else
+            tabHolder.Position = UDim2.new(0.5, -width/2 + offset, 0, 4)
+        end
+    end
+
+    tabList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateTabHolderSize)
+    updateTabHolderSize()
 
     -- disable CoreGui while this UI exists
     pcall(function()
@@ -281,6 +305,22 @@ end
 
 function Window:SetToggleKey(keyCode)
     self.DestroyKey = keyCode
+end
+
+function Window:SetTabBarAlignment(alignment)
+    alignment = alignment or "Center"
+    alignment = string.lower(alignment)
+    if alignment == "left" then
+        self.TabBarAlignment = "Left"
+    elseif alignment == "right" then
+        self.TabBarAlignment = "Right"
+    else
+        self.TabBarAlignment = "Center"
+    end
+end
+
+function Window:SetTabBarOffset(pixels)
+    self.TabBarOffset = tonumber(pixels) or 0
 end
 
 function Window:Destroy()
@@ -717,7 +757,7 @@ function Tab:AddKeybind(text, initialKey, callback)
     }
 end
 
--- Dropdown (fully functional, runtime SetItems)
+-- Dropdown (functional, runtime SetItems)
 function Tab:AddDropdown(text, items, default, callback)
     callback = callback or function() end
     items = items or {}
@@ -768,16 +808,19 @@ function Tab:AddDropdown(text, items, default, callback)
     menu.Size = UDim2.new(0.5, -4, 0, 0)
     menu.Visible = false
     menu.ClipsDescendants = true
+    menu.ZIndex = 50
 
     local menuCorner = Instance.new("UICorner")
     menuCorner.CornerRadius = UDim.new(0, 6)
     menuCorner.Parent = menu
+    menuCorner.ZIndex = 50
 
     local list = Instance.new("UIListLayout")
     list.FillDirection = Enum.FillDirection.Vertical
     list.SortOrder = Enum.SortOrder.LayoutOrder
     list.Padding = UDim.new(0, 2)
     list.Parent = menu
+    list.ZIndex = 50
 
     local opened = false
     local currentValue = default
@@ -801,10 +844,12 @@ function Tab:AddDropdown(text, items, default, callback)
             opt.TextColor3 = theme.Text
             opt.TextXAlignment = Enum.TextXAlignment.Left
             opt.Text = tostring(v)
+            opt.ZIndex = 51
 
             local c = Instance.new("UICorner")
             c.CornerRadius = UDim.new(0, 4)
             c.Parent = opt
+            c.ZIndex = 51
 
             table.insert(self.Window.Connections,
                 opt.MouseButton1Click:Connect(function()
