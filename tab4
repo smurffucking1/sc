@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local Library = {}
 Library.__index = Library
@@ -52,7 +53,8 @@ function Library:SetTheme(name)
     end
     self.Theme = self.Themes[name]
     self.Theme.Name = name
-    -- Theme propagation can be added later
+    -- optionally also expose on the root Library
+    Library.Theme = self.Theme
 end
 
 -- Window object
@@ -73,30 +75,40 @@ function Library:CreateWindow(options)
     local themeName = options.DefaultTheme or "Dark"
     selfLib:SetTheme(themeName)
 
--- main window gui
-local mainGui = Instance.new("ScreenGui")
-mainGui.Name = (options.Title or "MyUILib") .. "_Main"
-mainGui.IgnoreGuiInset = true
-mainGui.ResetOnSpawn = false
-mainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-mainGui.Parent = playerGui
+    -- MAIN WINDOW GUI
+    local mainGui = Instance.new("ScreenGui")
+    mainGui.Name = (options.Title or "MyUILib") .. "_Main"
+    mainGui.IgnoreGuiInset = true
+    mainGui.ResetOnSpawn = false
+    mainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    mainGui.Parent = playerGui
 
--- bottom taskbar gui
-local barGui = Instance.new("ScreenGui")
-barGui.Name = (options.Title or "MyUILib") .. "_Bar"
-barGui.IgnoreGuiInset = true
-barGui.ResetOnSpawn = false
-barGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-barGui.Parent = playerGui
+    -- TASKBAR GUI
+    local barGui = Instance.new("ScreenGui")
+    barGui.Name = (options.Title or "MyUILib") .. "_Bar"
+    barGui.IgnoreGuiInset = true
+    barGui.ResetOnSpawn = false
+    barGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    barGui.Parent = playerGui
 
--- main window frame (centered)
-local rootFrame = Instance.new("Frame")
-rootFrame.Name = "MainFrame"
-rootFrame.Size = UDim2.new(0, 500, 0, 320)
-rootFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
-rootFrame.BackgroundColor3 = selfLib.Theme.Background
-rootFrame.BorderSizePixel = 0
-rootFrame.Parent = mainGui
+    -- MAIN WINDOW CONTAINER (for animation)
+    local container = Instance.new("Frame")
+    container.Name = "MainContainer"
+    container.Size = UDim2.new(0, 500, 0, 320)
+    container.Position = UDim2.new(0.5, -250, 0.5, -160)
+    container.BackgroundTransparency = 1
+    container.BorderSizePixel = 0
+    container.AnchorPoint = Vector2.new(0.5, 0.5)
+    container.Parent = mainGui
+
+    local rootFrame = Instance.new("Frame")
+    rootFrame.Name = "MainFrame"
+    rootFrame.Size = UDim2.new(1, 0, 1, 0)
+    rootFrame.Position = UDim2.new(0, 0, 0, 0)
+    rootFrame.BackgroundColor3 = selfLib.Theme.Background
+    rootFrame.BorderSizePixel = 0
+    rootFrame.Parent = container
+
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = rootFrame
@@ -117,45 +129,53 @@ rootFrame.Parent = mainGui
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.TextColor3 = selfLib.Theme.Text
     titleLabel.TextSize = 16
-    titleLabel.Text = (options.Title or "Window") ..
-        (options.SubTitle and (" - " .. options.SubTitle) or "")
+    titleLabel.Text = (options.Title or "Window")
+        .. (options.SubTitle and (" - " .. options.SubTitle) or "")
     titleLabel.Parent = topBar
 
--- bottom taskbar frame (separate window)
-local tabBar = Instance.new("Frame")
-tabBar.Name = "TabBar"
-tabBar.BackgroundColor3 = selfLib.Theme.Background
-tabBar.BorderSizePixel = 0
-tabBar.Size = UDim2.new(1, 0, 0, 32)          -- full width, 32px tall
-tabBar.Position = UDim2.new(0, 0, 1, -32)     -- bottom of screen
-tabBar.Parent = barGui
+    -- TASKBAR (BOTTOM) – tile strip like Windows
+    local tabBar = Instance.new("Frame")
+    tabBar.Name = "TabBar"
+    tabBar.BackgroundColor3 = selfLib.Theme.Background
+    tabBar.BorderSizePixel = 0
+    tabBar.Size = UDim2.new(1, 0, 0, 56)              -- taskbar height
+    tabBar.Position = UDim2.new(0, 0, 1, -56)         -- bottom of screen
+    tabBar.Parent = barGui
 
-local tabHolder = Instance.new("Frame")
-tabHolder.Name = "TabHolder"
-tabHolder.BackgroundTransparency = 1
-tabHolder.Size = UDim2.new(1, -10, 1, -6)
-tabHolder.Position = UDim2.new(0, 5, 0, 3)
-tabHolder.Parent = tabBar
+    local tabHolder = Instance.new("Frame")
+    tabHolder.Name = "TabHolder"
+    tabHolder.BackgroundTransparency = 1
+    tabHolder.Size = UDim2.new(0, 420, 1, -8)        -- fixed strip width
+    tabHolder.Position = UDim2.new(0, 10, 0, 4)      -- left side of bar
+    tabHolder.Parent = tabBar
 
-local tabList = Instance.new("UIListLayout")
-tabList.FillDirection = Enum.FillDirection.Horizontal
-tabList.SortOrder = Enum.SortOrder.LayoutOrder
-tabList.Padding = UDim.new(0, 4)
-tabList.Parent = tabHolder
+    local tabList = Instance.new("UIListLayout")
+    tabList.FillDirection = Enum.FillDirection.Horizontal
+    tabList.SortOrder = Enum.SortOrder.LayoutOrder
+    tabList.Padding = UDim.new(0, 6)
+    tabList.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    tabList.VerticalAlignment = Enum.VerticalAlignment.Center
+    tabList.Parent = tabHolder
 
--- content stays fully in the main window
-local contentArea = Instance.new("Frame")
-contentArea.Name = "Content"
-contentArea.BackgroundColor3 = selfLib.Theme.Background
-contentArea.BorderSizePixel = 0
-contentArea.Size = UDim2.new(1, 0, 1, -32)    -- only subtract top bar
-contentArea.Position = UDim2.new(0, 0, 0, 32)
-contentArea.Parent = rootFrame
+    -- CONTENT (inside main window, full area below top bar)
+    local contentArea = Instance.new("Frame")
+    contentArea.Name = "Content"
+    contentArea.BackgroundColor3 = selfLib.Theme.Background
+    contentArea.BorderSizePixel = 0
+    contentArea.Size = UDim2.new(1, 0, 1, -32)
+    contentArea.Position = UDim2.new(0, 0, 0, 32)
+    contentArea.Parent = rootFrame
+
+    local contentCorner = Instance.new("UICorner")
+    contentCorner.CornerRadius = UDim.new(0, 10)
+    contentCorner.Parent = contentArea
 
     local thisWindow = setmetatable({
         Library = selfLib,
-        Gui = gui,
+        MainGui = mainGui,
+        BarGui = barGui,
         Root = rootFrame,
+        Container = container,
         TabBar = tabHolder,
         ContentArea = contentArea,
         Tabs = {},
@@ -164,17 +184,36 @@ contentArea.Parent = rootFrame
         DestroyKey = options.DestroyKey or Enum.KeyCode.RightShift,
     }, Window)
 
-    -- keybind to toggle visibility
+    -- keybind to toggle visibility of both main and bar
     table.insert(thisWindow.Connections,
         UserInputService.InputBegan:Connect(function(input, gp)
             if gp then
                 return
             end
             if input.KeyCode == thisWindow.DestroyKey then
-                thisWindow.Gui.Enabled = not thisWindow.Gui.Enabled
+                local newState = not thisWindow.MainGui.Enabled
+                thisWindow.MainGui.Enabled = newState
+                thisWindow.BarGui.Enabled = newState
             end
         end)
     )
+
+    -- simple popup animation (Windows-like)
+    container.Visible = true
+    container.Size = UDim2.new(0, 460, 0, 294)
+    container.Position = UDim2.new(0.5, -230, 0.5, -147)
+
+    local tweenInfo = TweenInfo.new(
+        0.18,
+        Enum.EasingStyle.Quad,
+        Enum.EasingDirection.Out
+    )
+
+    local tween = TweenService:Create(container, tweenInfo, {
+        Size = UDim2.new(0, 500, 0, 320),
+        Position = UDim2.new(0.5, -250, 0.5, -160),
+    })
+    tween:Play()
 
     return thisWindow
 end
@@ -193,8 +232,11 @@ function Window:Destroy()
     end
     table.clear(self.Connections)
 
-    if self.Gui and self.Gui.Parent then
-        self.Gui:Destroy()
+    if self.MainGui and self.MainGui.Parent then
+        self.MainGui:Destroy()
+    end
+    if self.BarGui and self.BarGui.Parent then
+        self.BarGui:Destroy()
     end
 end
 
@@ -219,15 +261,18 @@ end
 function Window:AddTab(name)
     local theme = self.Library.Theme
 
+    -- tile-style tab button in bottom taskbar
     local tabButton = Instance.new("TextButton")
     tabButton.Name = name .. "_TabButton"
     tabButton.Parent = self.TabBar
-    tabButton.Size = UDim2.new(1, 0, 0, 28)
+    tabButton.Size = UDim2.new(0, 90, 0, 40)        -- tile size
     tabButton.BackgroundColor3 = theme.TabInactive
     tabButton.BorderSizePixel = 0
-    tabButton.AutoButtonColor = false
-    tabButton.Font = Enum.Font.Gotham
-    tabButton.TextSize = 14
+    tabButton.AutoButtonColor = true
+    tabButton.Font = Enum.Font.GothamBold
+    tabButton.TextSize = 13
+    tabButton.TextWrapped = true
+    tabButton.TextTruncate = Enum.TextTruncate.AtEnd
     tabButton.Text = name
     tabButton.TextColor3 = theme.Text
 
@@ -352,6 +397,7 @@ function Tab:AddToggle(text, default, callback)
     box.BorderSizePixel = 0
     box.AutoButtonColor = false
     box.Text = ""
+
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = box
@@ -385,7 +431,7 @@ function Tab:AddToggle(text, default, callback)
     }
 end
 
--- Simple Keybind element (for Settings)
+-- Simple Keybind element (for Settings) with safety
 function Tab:AddKeybind(text, initialKey, callback)
     callback = callback or function() end
     local theme = self.Window.Library.Theme
@@ -423,12 +469,18 @@ function Tab:AddKeybind(text, initialKey, callback)
     corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = button
 
-    local currentKey = initialKey or Enum.KeyCode.RightShift
+    local currentKey = initialKey
+    if typeof(currentKey) ~= "EnumItem" or currentKey.EnumType ~= Enum.KeyCode then
+        currentKey = Enum.KeyCode.RightShift
+    end
     button.Text = currentKey.Name
 
     local listening = false
 
     local function setKey(keyCode)
+        if typeof(keyCode) ~= "EnumItem" or keyCode.EnumType ~= Enum.KeyCode then
+            return
+        end
         currentKey = keyCode
         button.Text = currentKey.Name
         callback(currentKey)
